@@ -25,7 +25,11 @@ import java.util.concurrent.Future;
 // The cross-version API requires that a Coordinator can be constructed without any constructor arguments
 public interface ICoordinator
 {
-    Object[][] execute(String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+    default Object[][] execute(String query, ConsistencyLevel consistencyLevel, Object... boundValues)
+    {
+        return executeWithResult(query, consistencyLevel, boundValues).toObjectArrays();
+    }
+    QueryResult executeWithResult(String query, ConsistencyLevel consistencyLevel, Object... boundValues);
     Iterator<Object[]> executeWithPaging(String query, ConsistencyLevel consistencyLevel, int pageSize, Object... boundValues);
 
     Future<Object[][]> asyncExecuteWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues);

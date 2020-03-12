@@ -33,6 +33,8 @@ import static org.apache.cassandra.distributed.api.Feature.GOSSIP;
 import static org.apache.cassandra.distributed.api.Feature.NATIVE_PROTOCOL;
 import static org.apache.cassandra.distributed.api.Feature.NETWORK;
 
+import static org.apache.cassandra.distributed.shared.AssertUtils.*;
+
 public class NativeProtocolTest extends TestBaseImpl
 {
 

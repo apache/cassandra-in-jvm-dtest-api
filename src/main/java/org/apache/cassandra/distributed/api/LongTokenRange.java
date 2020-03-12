@@ -18,11 +18,21 @@
 
 package org.apache.cassandra.distributed.api;
 
-public interface IListen
+import java.io.Serializable;
+
+public final class LongTokenRange implements Serializable
 {
-    interface Cancel { void cancel(); }
+    public final long minExclusive;
+    public final long maxInclusive;
 
-    Cancel schema(Runnable onChange);
+    public LongTokenRange(long minExclusive, long maxInclusive)
+    {
+        this.minExclusive = minExclusive;
+        this.maxInclusive = maxInclusive;
+    }
 
-    Cancel liveMembers(Runnable onChange);
+    public String toString()
+    {
+        return "(" + minExclusive + "," + maxInclusive + "]";
+    }
 }

@@ -18,6 +18,7 @@
 
 package org.apache.cassandra.distributed.api;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +35,7 @@ public interface IInstanceConfig
 
     int num();
     UUID hostId();
-    NetworkTopology.AddressAndPort broadcastAddress();
+    InetSocketAddress broadcastAddress();
     NetworkTopology networkTopology();
 
     String localRack();

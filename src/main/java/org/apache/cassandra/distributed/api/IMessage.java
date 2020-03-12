@@ -18,9 +18,8 @@
 
 package org.apache.cassandra.distributed.api;
 
-import org.apache.cassandra.distributed.shared.NetworkTopology;
-
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 
 /**
  * A cross-version interface for delivering internode messages via message sinks.
@@ -34,5 +33,5 @@ public interface IMessage extends Serializable
     // TODO: need to make this a long
     int id();
     int version();
-    NetworkTopology.AddressAndPort from();
+    InetSocketAddress from();
 }

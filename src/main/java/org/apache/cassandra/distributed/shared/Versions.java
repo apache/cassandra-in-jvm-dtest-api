@@ -18,6 +18,9 @@
 
 package org.apache.cassandra.distributed.shared;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -29,6 +32,8 @@ import java.util.stream.Collectors;
 
 public class Versions
 {
+    private static final Logger logger = LoggerFactory.getLogger(Versions.class);
+
     public static final String PROPERTY_PREFIX = "cassandra.";
 
     public static URL[] getClassPath()
@@ -159,7 +164,7 @@ public class Versions
     {
         final String dtestJarDirectory = System.getProperty(PROPERTY_PREFIX + "test.dtest_jar_path","build");
         final File sourceDirectory = new File(dtestJarDirectory);
-        System.out.println("Looking for dtest jars in " + sourceDirectory.getAbsolutePath());
+        logger.info("Looking for dtest jars in " + sourceDirectory.getAbsolutePath());
         final Pattern pattern = Pattern.compile("dtest-(?<fullversion>(\\d+)\\.(\\d+)(\\.\\d+)?(\\.\\d+)?)([~\\-]\\w[.\\w]*(?:\\-\\w[.\\w]*)*)?(\\+[.\\w]+)?\\.jar");
         final Map<Major, List<Version>> versions = new HashMap<>();
         for (Major major : Major.values())

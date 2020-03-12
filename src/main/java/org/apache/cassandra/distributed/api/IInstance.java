@@ -18,8 +18,7 @@
 
 package org.apache.cassandra.distributed.api;
 
-import org.apache.cassandra.distributed.shared.NetworkTopology;
-
+import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -33,7 +32,7 @@ public interface IInstance extends IIsolatedExecutor
     public Object[][] executeInternal(String query, Object... args);
 
     IInstanceConfig config();
-    NetworkTopology.AddressAndPort broadcastAddress();
+    InetSocketAddress broadcastAddress();
     UUID schemaVersion();
 
     void startup();
@@ -43,7 +42,14 @@ public interface IInstance extends IIsolatedExecutor
 
     int liveMemberCount();
 
-    int nodetool(String... commandAndArgs);
+    NodeToolResult nodetoolResult(boolean withNotifications, String... commandAndArgs);
+    default NodeToolResult nodetoolResult(String... commandAndArgs)
+    {
+        return nodetoolResult(true, commandAndArgs);
+    }
+    default int nodetool(String... commandAndArgs) {
+        return nodetoolResult(commandAndArgs).getRc();
+    }
     void uncaughtException(Thread t, Throwable e);
 
     /**
@@ -59,7 +65,7 @@ public interface IInstance extends IIsolatedExecutor
     void receiveMessage(IMessage message);
 
     int getMessagingVersion();
-    void setMessagingVersion(NetworkTopology.AddressAndPort addressAndPort, int version);
+    void setMessagingVersion(InetSocketAddress addressAndPort, int version);
 
     void flush(String keyspace);
     void forceCompact(String keyspace, String table);

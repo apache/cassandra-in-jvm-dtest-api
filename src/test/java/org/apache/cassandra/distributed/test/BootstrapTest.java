@@ -36,11 +36,9 @@ import org.apache.cassandra.distributed.shared.NetworkTopology;
 
 import static org.apache.cassandra.distributed.api.Feature.GOSSIP;
 import static org.apache.cassandra.distributed.api.Feature.NETWORK;
-import static org.apache.cassandra.distributed.shared.DistributedTestBase.KEYSPACE;
 
 public class BootstrapTest extends TestBaseImpl
 {
-
     @Test
     public void bootstrapTest() throws Throwable
     {
@@ -62,11 +60,6 @@ public class BootstrapTest extends TestBaseImpl
             config.set("auto_bootstrap", true);
 
             cluster.bootstrap(config).startup();
-
-            cluster.stream().forEach(instance -> {
-                instance.nodetool("cleanup", KEYSPACE, "tbl");
-            });
-
             withBootstrap = count(cluster);
         }
 
@@ -80,7 +73,8 @@ public class BootstrapTest extends TestBaseImpl
             naturally = count(cluster);
         }
 
-        Assert.assertEquals(withBootstrap, naturally);
+        for (Map.Entry<Integer, Long> e : withBootstrap.entrySet())
+            Assert.assertTrue(e.getValue() >= naturally.get(e.getKey()));
     }
 
     public void populate(ICluster cluster)

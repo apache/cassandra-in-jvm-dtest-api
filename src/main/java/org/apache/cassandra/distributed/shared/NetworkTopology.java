@@ -18,8 +18,8 @@
 
 package org.apache.cassandra.distributed.shared;
 
-import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +30,7 @@ import java.util.stream.IntStream;
 
 public class NetworkTopology
 {
-    private final Map<AddressAndPort, DcAndRack> map;
+    private final Map<InetSocketAddress, DcAndRack> map;
 
     public static class DcAndRack
     {
@@ -69,68 +69,21 @@ public class NetworkTopology
         }
     }
 
-    public static class AddressAndPort implements Serializable
-    {
-        private final InetAddress address;
-        private final int port;
-
-        public AddressAndPort(InetAddress address, int port)
-        {
-            this.address = address;
-            this.port = port;
-        }
-
-        public int getPort()
-        {
-            return port;
-        }
-
-        public InetAddress getAddress()
-        {
-            return address;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "AddressAndPort{" +
-                   "address=" + address +
-                   ", port=" + port +
-                   '}';
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            AddressAndPort that = (AddressAndPort) o;
-            return port == that.port &&
-                   Objects.equals(address, that.address);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(address, port);
-        }
-    }
-
     public static DcAndRack dcAndRack(String dc, String rack)
     {
         return new DcAndRack(dc, rack);
     }
 
-    public static AddressAndPort addressAndPort(InetAddress address, int port)
+    public static InetSocketAddress addressAndPort(InetAddress address, int port)
     {
-        return new AddressAndPort(address, port);
+        return new InetSocketAddress(address, port);
     }
 
-    public static AddressAndPort addressAndPort(String address, int port)
+    public static InetSocketAddress addressAndPort(String address, int port)
     {
         try
         {
-            return new AddressAndPort(InetAddress.getByName(address), port);
+            return new InetSocketAddress(InetAddress.getByName(address), port);
         }
         catch (UnknownHostException e)
         {
@@ -166,12 +119,12 @@ public class NetworkTopology
         return topology;
     }
 
-    public DcAndRack put(AddressAndPort addressAndPort, DcAndRack value)
+    public DcAndRack put(InetSocketAddress addressAndPort, DcAndRack value)
     {
         return map.put(addressAndPort, value);
     }
 
-    public String localRack(NetworkTopology.AddressAndPort key)
+    public String localRack(InetSocketAddress key)
     {
         DcAndRack p = map.get(key);
         if (p == null)
@@ -179,7 +132,7 @@ public class NetworkTopology
         return p.rack;
     }
 
-    public String localDC(NetworkTopology.AddressAndPort key)
+    public String localDC(InetSocketAddress key)
     {
         DcAndRack p = map.get(key);
         if (p == null)
@@ -187,7 +140,7 @@ public class NetworkTopology
         return p.dc;
     }
 
-    public boolean contains(NetworkTopology.AddressAndPort key)
+    public boolean contains(InetSocketAddress key)
     {
         return map.containsKey(key);
     }
