@@ -90,8 +90,8 @@
     </build>
 
     <scm>
-        <connection>scm:git:git@github.com:apache/cassandra-in-jvm-dtests.git</connection>
-        <developerConnection>scm:git:git@github.com:apache/cassandra-in-jvm-dtests.git</developerConnection>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</developerConnection>
         <url>git@github.com:apache/cassandra-in-jvm-dtests.git</url>
         <tag>HEAD</tag>
     </scm>
