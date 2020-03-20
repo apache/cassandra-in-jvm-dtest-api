@@ -15,6 +15,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <assembly.skipAssembly>true</assembly.skipAssembly>
     </properties>
 
     <licenses>
@@ -31,20 +32,22 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cassandra</groupId>
-            <artifactId>in-jvm-dtest-cassandra-tryout</artifactId>
-            <version>0.0.1-2.2-1</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.rat</groupId>
+                    <artifactId>apache-rat-plugin</artifactId>
+                    <configuration>
+                        <excludes>
+                            <exclude>README.md</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -55,8 +58,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-
-
             <plugin>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>2.8.2</version>
@@ -70,22 +71,22 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.5</version>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>0.13</version>
+                <configuration>
+                    <addLicenseHeaders>true</addLicenseHeaders>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>sign-artifacts</id>
                         <phase>verify</phase>
                         <goals>
-                            <goal>sign</goal>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 
@@ -93,7 +94,6 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</url>
-        <tag>0.0.4</tag>
     </scm>
 </project>
 
