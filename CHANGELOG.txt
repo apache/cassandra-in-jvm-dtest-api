@@ -1,0 +1,3 @@
+# 0.0.2
+
+CASSANDRA-15684: improve error codes in NodeToolResult to produce better errors and to allow Any style message checks
