@@ -26,7 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-public interface ICluster<I extends IInstance> extends AutoCloseable {
+public interface ICluster<I extends IInstance> extends AutoCloseable
+{
     void startup();
 
     I bootstrap(IInstanceConfig config);
@@ -51,14 +52,16 @@ public interface ICluster<I extends IInstance> extends AutoCloseable {
 
     IMessageFilters filters();
 
-    static void setup() throws Throwable {
+    static void setup() throws Throwable
+    {
         setupLogging();
         setSystemProperties();
         nativeLibraryWorkaround();
         processReaperWorkaround();
     }
 
-    static void nativeLibraryWorkaround() {
+    static void nativeLibraryWorkaround()
+    {
         // Disable the Netty tcnative library otherwise the io.netty.internal.tcnative.CertificateCallbackTask,
         // CertificateVerifierTask, SSLPrivateKeyMethodDecryptTask, SSLPrivateKeyMethodSignTask,
         // SSLPrivateKeyMethodTask, and SSLTask hold a gcroot against the InstanceClassLoader.
@@ -66,32 +69,39 @@ public interface ICluster<I extends IInstance> extends AutoCloseable {
         System.setProperty("io.netty.transport.noNative", "true");
     }
 
-    static void processReaperWorkaround() throws Throwable {
+    static void processReaperWorkaround() throws Throwable
+    {
         // Make sure the 'process reaper' thread is initially created under the main classloader,
         // otherwise it gets created with the contextClassLoader pointing to an InstanceClassLoader
         // which prevents it from being garbage collected.
         new ProcessBuilder().command("true").start().waitFor();
     }
 
-    static void setSystemProperties() {
+    static void setSystemProperties()
+    {
         System.setProperty("cassandra.ring_delay_ms", Integer.toString(30 * 1000));
         System.setProperty("org.apache.cassandra.disable_mbean_registration", "true");
     }
 
-    static void setupLogging() {
-        try {
+    static void setupLogging()
+    {
+        try
+        {
             File root = Files.createTempDirectory("in-jvm-dtest").toFile();
             root.deleteOnExit();
             String testConfPath = "test/conf/logback-dtest.xml";
             Path logConfPath = Paths.get(root.getPath(), "/logback-dtest.xml");
 
-            if (!logConfPath.toFile().exists()) {
+            if (!logConfPath.toFile().exists())
+            {
                 Files.copy(new File(testConfPath).toPath(),
                            logConfPath);
             }
 
             System.setProperty("logback.configurationFile", "file://" + logConfPath);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             throw new RuntimeException(e);
         }
     }

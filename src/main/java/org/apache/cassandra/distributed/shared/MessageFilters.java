@@ -87,8 +87,8 @@ public class MessageFilters implements IMessageFilters
         {
             return (from == null ? 0 : Arrays.hashCode(from))
                    + (to == null ? 0 : Arrays.hashCode(to))
-                    + (verbs == null ? 0 : Arrays.hashCode(verbs)
-                    + parent.hashCode());
+                   + (verbs == null ? 0 : Arrays.hashCode(verbs)
+                                          + parent.hashCode());
         }
 
         public boolean equals(Object that)
@@ -100,8 +100,8 @@ public class MessageFilters implements IMessageFilters
         {
             return Arrays.equals(from, that.from)
                    && Arrays.equals(to, that.to)
-                    && Arrays.equals(verbs, that.verbs)
-                    && parent.equals(that.parent);
+                   && Arrays.equals(verbs, that.verbs)
+                   && parent.equals(that.parent);
         }
 
         public Filter off()

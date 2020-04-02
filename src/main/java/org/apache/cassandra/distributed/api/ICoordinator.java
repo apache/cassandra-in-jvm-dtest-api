@@ -29,10 +29,14 @@ public interface ICoordinator
     {
         return executeWithResult(query, consistencyLevel, boundValues).toObjectArrays();
     }
+
     QueryResult executeWithResult(String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+
     Iterator<Object[]> executeWithPaging(String query, ConsistencyLevel consistencyLevel, int pageSize, Object... boundValues);
 
     Future<Object[][]> asyncExecuteWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+
     Object[][] executeWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+
     IInstance instance();
 }

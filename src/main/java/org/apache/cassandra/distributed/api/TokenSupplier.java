@@ -18,10 +18,12 @@
 
 package org.apache.cassandra.distributed.api;
 
-public interface TokenSupplier {
+public interface TokenSupplier
+{
     long token(int nodeId);
 
-    static TokenSupplier evenlyDistributedTokens(int numNodes) {
+    static TokenSupplier evenlyDistributedTokens(int numNodes)
+    {
         long increment = (Long.MAX_VALUE / numNodes) * 2;
         return (int nodeId) -> {
             assert nodeId <= numNodes : String.format("Can not allocate a token for a node %s, since only %s nodes are allowed by the token allocation strategy",

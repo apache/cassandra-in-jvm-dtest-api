@@ -26,35 +26,46 @@ import java.util.concurrent.Future;
 public interface IInstance extends IIsolatedExecutor
 {
     ICoordinator coordinator();
+
     IListen listen();
 
     void schemaChangeInternal(String query);
+
     public Object[][] executeInternal(String query, Object... args);
 
     IInstanceConfig config();
+
     InetSocketAddress broadcastAddress();
+
     UUID schemaVersion();
 
     void startup();
+
     boolean isShutdown();
+
     Future<Void> shutdown();
+
     Future<Void> shutdown(boolean graceful);
 
     int liveMemberCount();
 
     NodeToolResult nodetoolResult(boolean withNotifications, String... commandAndArgs);
+
     default NodeToolResult nodetoolResult(String... commandAndArgs)
     {
         return nodetoolResult(true, commandAndArgs);
     }
-    default int nodetool(String... commandAndArgs) {
+
+    default int nodetool(String... commandAndArgs)
+    {
         return nodetoolResult(commandAndArgs).getRc();
     }
+
     void uncaughtException(Thread t, Throwable e);
 
     /**
      * Return the number of times the instance tried to call {@link System#exit(int)}.
-     *
+     * <p>
      * When the instance is shutdown, this state should be saved, but in case not possible should return {@code -1}
      * to indicate "unknown".
      */
@@ -62,11 +73,14 @@ public interface IInstance extends IIsolatedExecutor
 
     // these methods are not for external use, but for simplicity we leave them public and on the normal IInstance interface
     void startup(ICluster cluster);
+
     void receiveMessage(IMessage message);
 
     int getMessagingVersion();
+
     void setMessagingVersion(InetSocketAddress addressAndPort, int version);
 
     void flush(String keyspace);
+
     void forceCompact(String keyspace, String table);
 }

@@ -20,5 +20,5 @@ package org.apache.cassandra.distributed.api;
 
 public enum Feature
 {
-    NETWORK, GOSSIP, NATIVE_PROTOCOL
+    NETWORK, GOSSIP, NATIVE_PROTOCOL;
 }

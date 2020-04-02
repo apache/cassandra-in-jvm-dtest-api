@@ -31,14 +31,19 @@ import org.apache.cassandra.distributed.shared.Versions;
 public interface IInstanceConfig
 {
     IInstanceConfig with(Feature featureFlag);
+
     IInstanceConfig with(Feature... flags);
 
     int num();
+
     UUID hostId();
+
     InetSocketAddress broadcastAddress();
+
     NetworkTopology networkTopology();
 
     String localRack();
+
     String localDatacenter();
 
     /**
@@ -46,16 +51,21 @@ public interface IInstanceConfig
      * from any ClassLoader; the implementation must not directly access any fields of the Object, or cast it, but
      * must use the reflection API to modify the state
      */
-    void propagate(Object writeToConfig, Map<Class<?>, Function<Object, Object>>executor);
+    void propagate(Object writeToConfig, Map<Class<?>, Function<Object, Object>> executor);
 
     /**
      * Validates whether the config properties are within range of accepted values.
      */
     void validate();
+
     IInstanceConfig set(String fieldName, Object value);
+
     Object get(String fieldName);
+
     String getString(String fieldName);
+
     int getInt(String fieldName);
+
     boolean has(Feature featureFlag);
 
     public IInstanceConfig forVersion(Versions.Major major);
@@ -77,8 +87,8 @@ public interface IInstanceConfig
         @SuppressWarnings("unchecked")
         public ParameterizedClass(Map<String, ?> p)
         {
-            this((String)p.get(CLASS_NAME),
-                 p.containsKey(PARAMETERS) ? (Map<String, String>)((List<?>)p.get(PARAMETERS)).get(0) : null);
+            this((String) p.get(CLASS_NAME),
+                 p.containsKey(PARAMETERS) ? (Map<String, String>) ((List<?>) p.get(PARAMETERS)).get(0) : null);
         }
 
         @Override
@@ -98,5 +108,4 @@ public interface IInstanceConfig
             return class_name + (parameters == null ? "" : parameters.toString());
         }
     }
-
 }

@@ -30,28 +30,56 @@ import java.util.function.Supplier;
 /**
  * Represents a clean way to handoff evaluation of some work to an executor associated
  * with a node's lifetime.
- *
+ * <p>
  * There is no transfer of execution to the parallel class hierarchy.
- *
+ * <p>
  * Classes, such as Instance, that are themselves instantiated on the correct ClassLoader, utilise this class
  * to ensure the lifetime of any thread evaluating one of its method invocations matches the lifetime of the class itself.
  * Since they are instantiated on the correct ClassLoader, sharing only the interface, there is no serialization necessary.
  */
 public interface IIsolatedExecutor
 {
-    public interface CallableNoExcept<O> extends Callable<O> { public O call(); }
-    public interface SerializableCallable<O> extends CallableNoExcept<O>, Serializable { }
-    public interface SerializableRunnable extends Runnable, Serializable {}
-    public interface SerializableConsumer<O> extends Consumer<O>, Serializable {}
-    public interface SerializableSupplier<O> extends Supplier<O>, Serializable {}
-    public interface SerializableBiConsumer<I1, I2> extends BiConsumer<I1, I2>, Serializable {}
-    public interface SerializableFunction<I, O> extends Function<I, O>, Serializable {}
-    public interface SerializableBiFunction<I1, I2, O> extends BiFunction<I1, I2, O>, Serializable {}
+    public interface CallableNoExcept<O> extends Callable<O>
+    {
+        public O call();
+    }
+
+    public interface SerializableCallable<O> extends CallableNoExcept<O>, Serializable
+    {
+    }
+
+    public interface SerializableRunnable extends Runnable, Serializable
+    {
+    }
+
+    public interface SerializableConsumer<O> extends Consumer<O>, Serializable
+    {
+    }
+
+    public interface SerializableSupplier<O> extends Supplier<O>, Serializable
+    {
+    }
+
+    public interface SerializableBiConsumer<I1, I2> extends BiConsumer<I1, I2>, Serializable
+    {
+    }
+
+    public interface SerializableFunction<I, O> extends Function<I, O>, Serializable
+    {
+    }
+
+    public interface SerializableBiFunction<I1, I2, O> extends BiFunction<I1, I2, O>, Serializable
+    {
+    }
+
     public interface TriFunction<I1, I2, I3, O>
     {
         O apply(I1 i1, I2 i2, I3 i3);
     }
-    public interface SerializableTriFunction<I1, I2, I3, O> extends Serializable, TriFunction<I1, I2, I3, O> { }
+
+    public interface SerializableTriFunction<I1, I2, I3, O> extends Serializable, TriFunction<I1, I2, I3, O>
+    {
+    }
 
     Future<Void> shutdown();
 
@@ -124,5 +152,4 @@ public interface IIsolatedExecutor
      * Convert the execution to one performed synchronously on the IsolatedExecutor
      */
     <I1, I2, I3, O> TriFunction<I1, I2, I3, O> sync(TriFunction<I1, I2, I3, O> f);
-
 }

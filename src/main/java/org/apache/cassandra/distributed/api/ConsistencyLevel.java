@@ -18,7 +18,8 @@
 
 package org.apache.cassandra.distributed.api;
 
-public enum  ConsistencyLevel {
+public enum ConsistencyLevel
+{
     ANY,
     ONE,
     TWO,

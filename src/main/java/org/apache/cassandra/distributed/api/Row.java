@@ -18,11 +18,18 @@
 
 package org.apache.cassandra.distributed.api;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Data representing a single row in a query result.
- *
+ * <p>
  * This class is mutable from the parent {@link QueryResult} and can have the row it points to changed between calls
  * to {@link QueryResult#hasNext()}, for this reason it is unsafe to hold reference to this class after that call;
  * to get around this, a call to {@link #copy()} will return a new object pointing to the same row.
@@ -36,7 +43,8 @@ public class Row
     {
         Objects.requireNonNull(names, "names");
         this.nameIndex = new HashMap<>(names.length);
-        for (int i = 0; i < names.length; i++) {
+        for (int i = 0; i < names.length; i++)
+        {
             nameIndex.put(names[i], i);
         }
     }
@@ -54,7 +62,8 @@ public class Row
     /**
      * Creates a copy of the current row; can be used past calls to {@link QueryResult#hasNext()}.
      */
-    public Row copy() {
+    public Row copy()
+    {
         Row copy = new Row(nameIndex);
         copy.setResults(results);
         return copy;
