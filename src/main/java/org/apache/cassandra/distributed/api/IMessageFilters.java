@@ -22,18 +22,21 @@ import java.util.function.Predicate;
 
 public interface IMessageFilters
 {
-    public interface Filter
+    interface Filter
     {
         Filter off();
+
         Filter on();
     }
 
-    public interface Builder
+    interface Builder
     {
-        Builder from(int ... nums);
-        Builder to(int ... nums);
+        Builder from(int... nums);
+
+        Builder to(int... nums);
 
         Builder verbs(int... verbs);
+
         Builder allVerbs();
 
         Builder inbound(boolean inbound);
@@ -53,31 +56,42 @@ public interface IMessageFilters
          * other matchers in the chain will return `true` as well).
          */
         Builder messagesMatching(Matcher filter);
+
         Filter drop();
     }
 
-    public interface Matcher
+    interface Matcher
     {
         boolean matches(int from, int to, IMessage message);
 
-        static Matcher of(Predicate<IMessage> fn) {
+        static Matcher of(Predicate<IMessage> fn)
+        {
             return (from, to, m) -> fn.test(m);
         }
     }
 
     Builder inbound(boolean inbound);
-    default Builder inbound() {
+
+    default Builder inbound()
+    {
         return inbound(true);
     }
-    default Builder outbound() {
+
+    default Builder outbound()
+    {
         return inbound(false);
     }
-    default Builder verbs(int... verbs) {
+
+    default Builder verbs(int... verbs)
+    {
         return inbound().verbs(verbs);
     }
-    default Builder allVerbs() {
+
+    default Builder allVerbs()
+    {
         return inbound().allVerbs();
     }
+
     void reset();
 
     /**

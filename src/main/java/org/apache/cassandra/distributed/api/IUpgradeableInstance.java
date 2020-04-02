@@ -18,12 +18,11 @@
 
 package org.apache.cassandra.distributed.api;
 
-import org.apache.cassandra.distributed.api.IInstance;
 import org.apache.cassandra.distributed.shared.Versions;
 
 // this lives outside the api package so that we do not have to worry about inter-version compatibility
 public interface IUpgradeableInstance extends IInstance
 {
     // only to be invoked while the node is shutdown!
-    public void setVersion(Versions.Version version);
+    void setVersion(Versions.Version version);
 }

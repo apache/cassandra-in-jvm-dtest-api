@@ -18,13 +18,13 @@
 
 package org.apache.cassandra.distributed.api;
 
-import org.apache.cassandra.distributed.shared.AssertUtils;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.management.Notification;
+
+import org.apache.cassandra.distributed.shared.AssertUtils;
 
 public class NodeToolResult
 {
@@ -66,28 +66,35 @@ public class NodeToolResult
         return new Asserts();
     }
 
-    public final class Asserts {
-        public Asserts success() {
+    public final class Asserts
+    {
+        public Asserts success()
+        {
             AssertUtils.assertEquals("nodetool command " + commandAndArgs[0] + " was not successful", 0, rc);
             return this;
         }
 
-        public Asserts failure() {
+        public Asserts failure()
+        {
             AssertUtils.assertNotEquals("nodetool command " + commandAndArgs[0] + " was successful but not expected to be", 0, rc);
             return this;
         }
 
-        public Asserts errorContains(String msg) {
+        public Asserts errorContains(String msg)
+        {
             AssertUtils.assertNotNull("No exception was found but expected one", error);
             AssertUtils.assertTrue("Error message '" + error.getMessage() + "' does not contain '" + msg + "'", error.getMessage().contains(msg));
             return this;
         }
 
-        public Asserts notificationContains(String msg) {
+        public Asserts notificationContains(String msg)
+        {
             AssertUtils.assertNotNull("notifications not defined", notifications);
             AssertUtils.assertFalse("notifications not defined", notifications.isEmpty());
-            for (Notification n : notifications) {
-                if (n.getMessage().contains(msg)) {
+            for (Notification n : notifications)
+            {
+                if (n.getMessage().contains(msg))
+                {
                     return this;
                 }
             }
@@ -95,13 +102,17 @@ public class NodeToolResult
             return this; // unreachable
         }
 
-        public Asserts notificationContains(ProgressEventType type, String msg) {
+        public Asserts notificationContains(ProgressEventType type, String msg)
+        {
             int userType = type.ordinal();
             AssertUtils.assertNotNull("notifications not defined", notifications);
             AssertUtils.assertFalse("notifications not defined", notifications.isEmpty());
-            for (Notification n : notifications) {
-                if (notificationType(n) == userType) {
-                    if (n.getMessage().contains(msg)) {
+            for (Notification n : notifications)
+            {
+                if (notificationType(n) == userType)
+                {
+                    if (n.getMessage().contains(msg))
+                    {
                         return this;
                     }
                 }

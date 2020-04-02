@@ -20,7 +20,10 @@ package org.apache.cassandra.distributed.api;
 
 public interface IListen
 {
-    interface Cancel { void cancel(); }
+    interface Cancel
+    {
+        void cancel();
+    }
 
     Cancel schema(Runnable onChange);
 

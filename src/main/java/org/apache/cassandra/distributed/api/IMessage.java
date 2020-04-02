@@ -23,15 +23,19 @@ import java.net.InetSocketAddress;
 
 /**
  * A cross-version interface for delivering internode messages via message sinks.
- *
+ * <p>
  * Message implementations should be serializable so we could load into instances.
  */
 public interface IMessage extends Serializable
 {
     int verb();
+
     byte[] bytes();
+
     // TODO: need to make this a long
     int id();
+
     int version();
+
     InetSocketAddress from();
 }

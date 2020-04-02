@@ -20,9 +20,9 @@ package org.apache.cassandra.distributed.shared;
 
 public interface ThrowingRunnable
 {
-    public void run() throws Throwable;
+    void run() throws Throwable;
 
-    public static Runnable toRunnable(ThrowingRunnable runnable)
+    static Runnable toRunnable(ThrowingRunnable runnable)
     {
         return () -> {
             try

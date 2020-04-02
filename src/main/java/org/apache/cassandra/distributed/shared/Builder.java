@@ -18,11 +18,6 @@
 
 package org.apache.cassandra.distributed.shared;
 
-import org.apache.cassandra.distributed.api.ICluster;
-import org.apache.cassandra.distributed.api.IInstance;
-import org.apache.cassandra.distributed.api.IInstanceConfig;
-import org.apache.cassandra.distributed.api.TokenSupplier;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,13 +29,20 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.cassandra.distributed.api.ICluster;
+import org.apache.cassandra.distributed.api.IInstance;
+import org.apache.cassandra.distributed.api.IInstanceConfig;
+import org.apache.cassandra.distributed.api.TokenSupplier;
+
 import static org.apache.cassandra.distributed.api.TokenSupplier.evenlyDistributedTokens;
 
-public abstract class Builder<I extends IInstance, C extends ICluster> {
+public abstract class Builder<I extends IInstance, C extends ICluster>
+{
 
     private final int BROADCAST_PORT = 7012;
 
-    public interface Factory<I extends IInstance, C extends ICluster> {
+    public interface Factory<I extends IInstance, C extends ICluster>
+    {
         C newCluster(File root, Versions.Version version, List<IInstanceConfig> configs, ClassLoader sharedClassLoader);
     }
 
@@ -53,27 +55,31 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
     private Versions.Version version;
     private Consumer<IInstanceConfig> configUpdater;
 
-    public Builder(Factory<I, C> factory) {
+    public Builder(Factory<I, C> factory)
+    {
         this.factory = factory;
     }
 
-    public C start() throws IOException {
+    public C start() throws IOException
+    {
         C cluster = createWithoutStarting();
         cluster.startup();
         return cluster;
     }
 
-    public C createWithoutStarting() throws IOException {
+    public C createWithoutStarting() throws IOException
+    {
         if (root == null)
             root = Files.createTempDirectory("dtests").toFile();
 
         if (nodeCount <= 0)
             throw new IllegalStateException("Cluster must have at least one node");
 
-        if (nodeIdTopology == null) {
+        if (nodeIdTopology == null)
+        {
             nodeIdTopology = IntStream.rangeClosed(1, nodeCount).boxed()
-                    .collect(Collectors.toMap(nodeId -> nodeId,
-                                              nodeId -> NetworkTopology.dcAndRack(dcName(0), rackName(0))));
+                                      .collect(Collectors.toMap(nodeId -> nodeId,
+                                                                nodeId -> NetworkTopology.dcAndRack(dcName(0), rackName(0))));
         }
 
         root.mkdirs();
@@ -86,7 +92,8 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
         if (tokenSupplier == null)
             tokenSupplier = evenlyDistributedTokens(nodeCount);
 
-        for (int i = 0; i < nodeCount; ++i) {
+        for (int i = 0; i < nodeCount; ++i)
+        {
             int nodeNum = i + 1;
             configs.add(createInstanceConfig(nodeNum));
         }
@@ -94,11 +101,13 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
         return factory.newCluster(root, version, configs, sharedClassLoader);
     }
 
-    public IInstanceConfig newInstanceConfig(C cluster) {
+    public IInstanceConfig newInstanceConfig(C cluster)
+    {
         return createInstanceConfig(cluster.size() + 1);
     }
 
-    protected IInstanceConfig createInstanceConfig(int nodeNum) {
+    protected IInstanceConfig createInstanceConfig(int nodeNum)
+    {
         String ipPrefix = "127.0." + subnet + ".";
         String seedIp = ipPrefix + "1";
         String ipAddress = ipPrefix + nodeNum;
@@ -115,26 +124,31 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
 
     protected abstract IInstanceConfig generateConfig(int nodeNum, String ipAddress, NetworkTopology networkTopology, File root, String token, String seedIp);
 
-    public Builder<I, C> withTokenSupplier(TokenSupplier tokenSupplier) {
+    public Builder<I, C> withTokenSupplier(TokenSupplier tokenSupplier)
+    {
         this.tokenSupplier = tokenSupplier;
         return this;
     }
 
-    public Builder<I, C> withSubnet(int subnet) {
+    public Builder<I, C> withSubnet(int subnet)
+    {
         this.subnet = subnet;
         return this;
     }
 
-    public Builder<I, C> withNodes(int nodeCount) {
+    public Builder<I, C> withNodes(int nodeCount)
+    {
         this.nodeCount = nodeCount;
         return this;
     }
 
-    public Builder<I, C> withDCs(int dcCount) {
+    public Builder<I, C> withDCs(int dcCount)
+    {
         return withRacks(dcCount, 1);
     }
 
-    public Builder<I, C> withRacks(int dcCount, int racksPerDC) {
+    public Builder<I, C> withRacks(int dcCount, int racksPerDC)
+    {
         if (nodeCount == 0)
             throw new IllegalStateException("Node count will be calculated. Do not supply total node count in the builder");
 
@@ -143,21 +157,25 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
         return withRacks(dcCount, racksPerDC, nodesPerRack);
     }
 
-    public Builder<I, C> withRacks(int dcCount, int racksPerDC, int nodesPerRack) {
+    public Builder<I, C> withRacks(int dcCount, int racksPerDC, int nodesPerRack)
+    {
         if (nodeIdTopology != null)
             throw new IllegalStateException("Network topology already created. Call withDCs/withRacks once or before withDC/withRack calls");
 
         nodeIdTopology = new HashMap<>();
         int nodeId = 1;
-        for (int dc = 1; dc <= dcCount; dc++) {
-            for (int rack = 1; rack <= racksPerDC; rack++) {
+        for (int dc = 1; dc <= dcCount; dc++)
+        {
+            for (int rack = 1; rack <= racksPerDC; rack++)
+            {
                 for (int rackNodeIdx = 0; rackNodeIdx < nodesPerRack; rackNodeIdx++)
                     nodeIdTopology.put(nodeId++, NetworkTopology.dcAndRack(dcName(dc), rackName(rack)));
             }
         }
         // adjust the node count to match the allocatation
         final int adjustedNodeCount = dcCount * racksPerDC * nodesPerRack;
-        if (adjustedNodeCount != nodeCount) {
+        if (adjustedNodeCount != nodeCount)
+        {
             assert adjustedNodeCount > nodeCount : "withRacks should only ever increase the node count";
             System.out.println(String.format("Network topology of %s DCs with %s racks per DC and %s nodes per rack required increasing total nodes to %s",
                                              dcCount, racksPerDC, nodesPerRack, adjustedNodeCount));
@@ -166,12 +184,15 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
         return this;
     }
 
-    public Builder<I, C> withDC(String dcName, int nodeCount) {
+    public Builder<I, C> withDC(String dcName, int nodeCount)
+    {
         return withRack(dcName, rackName(1), nodeCount);
     }
 
-    public Builder<I, C> withRack(String dcName, String rackName, int nodesInRack) {
-        if (nodeIdTopology == null) {
+    public Builder<I, C> withRack(String dcName, String rackName, int nodesInRack)
+    {
+        if (nodeIdTopology == null)
+        {
             if (nodeCount > 0)
                 throw new IllegalStateException("Node count must not be explicitly set, or allocated using withDCs/withRacks");
 
@@ -185,7 +206,8 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
     }
 
     // Map of node ids to dc and rack - must be contiguous with an entry nodeId 1 to nodeCount
-    public Builder<I, C> withNodeIdTopology(Map<Integer, NetworkTopology.DcAndRack> nodeIdTopology) {
+    public Builder<I, C> withNodeIdTopology(Map<Integer, NetworkTopology.DcAndRack> nodeIdTopology)
+    {
         if (nodeIdTopology.isEmpty())
             throw new IllegalStateException("Topology is empty. It must have an entry for every nodeId.");
 
@@ -194,7 +216,8 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
                 throw new IllegalStateException("Topology is missing entry for nodeId " + nodeId);
         });
 
-        if (nodeCount != nodeIdTopology.size()) {
+        if (nodeCount != nodeIdTopology.size())
+        {
             nodeCount = nodeIdTopology.size();
             System.out.println(String.format("Adjusting node count to %s for supplied network topology", nodeCount));
         }
@@ -204,17 +227,20 @@ public abstract class Builder<I extends IInstance, C extends ICluster> {
         return this;
     }
 
-    public Builder<I, C> withRoot(File root) {
+    public Builder<I, C> withRoot(File root)
+    {
         this.root = root;
         return this;
     }
 
-    public Builder<I, C> withVersion(Versions.Version version) {
+    public Builder<I, C> withVersion(Versions.Version version)
+    {
         this.version = version;
         return this;
     }
 
-    public Builder<I, C> withConfig(Consumer<IInstanceConfig> updater) {
+    public Builder<I, C> withConfig(Consumer<IInstanceConfig> updater)
+    {
         this.configUpdater = updater;
         return this;
     }

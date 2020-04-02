@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 
 /**
  * A table of data representing a complete query result.
- *
+ * <p>
  * A <code>QueryResult</code> is different from {@link java.sql.ResultSet} in several key ways:
  *
  * <ul>
@@ -38,7 +38,7 @@ import java.util.function.Predicate;
  * </ul>
  *
  * <h2>Unsafe patterns</h2>
- *
+ * <p>
  * Below are a few unsafe patterns which may lead to unexpected results
  *
  * <code>{@code
@@ -50,7 +50,7 @@ import java.util.function.Predicate;
  * <code>{@code
  * rs.forEach(list::add)
  * }</code>
- *
+ * <p>
  * Both cases have the same issue; reference to a row from a previous call to {@link #hasNext()}.  Since the same {@link Row}
  * object can be used accross different calls to {@link #hasNext()} this would mean any attempt to access after the fact
  * points to newer data.  If this behavior is not desirable and access is needed between calls, then {@link Row#copy()}

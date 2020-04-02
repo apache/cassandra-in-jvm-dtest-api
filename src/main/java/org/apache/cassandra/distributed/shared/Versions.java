@@ -18,17 +18,22 @@
 
 package org.apache.cassandra.distributed.shared;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Versions
 {
@@ -66,6 +71,7 @@ public class Versions
         v3X("3\\.([1-9]|1[01])(\\.([0-9]+))?"),
         v4("4\\.([0-9]+)");
         final Pattern pattern;
+
         Major(String verify)
         {
             this.pattern = Pattern.compile(verify);
@@ -132,6 +138,7 @@ public class Versions
         {
             this(Major.fromFull(version), version, classpath);
         }
+
         public Version(Major major, String version, URL[] classpath)
         {
             this.major = major;
@@ -141,6 +148,7 @@ public class Versions
     }
 
     private final Map<Major, List<Version>> versions;
+
     public Versions(Map<Major, List<Version>> versions)
     {
         this.versions = versions;
@@ -149,10 +157,10 @@ public class Versions
     public Version get(String full)
     {
         return versions.get(Major.fromFull(full))
-                .stream()
-                .filter(v -> full.equals(v.version))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No version " + full + " found"));
+                       .stream()
+                       .filter(v -> full.equals(v.version))
+                       .findFirst()
+                       .orElseThrow(() -> new RuntimeException("No version " + full + " found"));
     }
 
     public Version getLatest(Major major)
@@ -162,7 +170,7 @@ public class Versions
 
     public static Versions find()
     {
-        final String dtestJarDirectory = System.getProperty(PROPERTY_PREFIX + "test.dtest_jar_path","build");
+        final String dtestJarDirectory = System.getProperty(PROPERTY_PREFIX + "test.dtest_jar_path", "build");
         final File sourceDirectory = new File(dtestJarDirectory);
         logger.info("Looking for dtest jars in " + sourceDirectory.getAbsolutePath());
         final Pattern pattern = Pattern.compile("dtest-(?<fullversion>(\\d+)\\.(\\d+)(\\.\\d+)?(\\.\\d+)?)([~\\-]\\w[.\\w]*(?:\\-\\w[.\\w]*)*)?(\\+[.\\w]+)?\\.jar");
@@ -177,7 +185,7 @@ public class Versions
                 continue;
             String version = m.group(1);
             Major major = Major.fromFull(version);
-            versions.get(major).add(new Version(major, version, new URL[] { toURL(file) }));
+            versions.get(major).add(new Version(major, version, new URL[]{ toURL(file) }));
         }
 
         for (Map.Entry<Major, List<Version>> e : versions.entrySet())
@@ -202,5 +210,4 @@ public class Versions
             throw new IllegalArgumentException(e);
         }
     }
-
 }

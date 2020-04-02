@@ -23,7 +23,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class AssertUtils {
+public class AssertUtils
+{
 
     public static void assertRows(Object[][] actual, Object[]... expected)
     {
@@ -55,16 +56,20 @@ public class AssertUtils {
 
     public static void assertRows(Iterator<Object[]> actual, Object[]... expected)
     {
-        assertRows(actual, new Iterator<Object[]>() {
+        assertRows(actual, new Iterator<Object[]>()
+        {
 
             int i = 0;
+
             @Override
-            public boolean hasNext() {
+            public boolean hasNext()
+            {
                 return i < expected.length;
             }
 
             @Override
-            public Object[] next() {
+            public Object[] next()
+            {
                 return expected[i++];
             }
         });
@@ -115,34 +120,39 @@ public class AssertUtils {
         return expected;
     }
 
-    public static void assertEquals(String message, long expected, long actual) {
+    public static void assertEquals(String message, long expected, long actual)
+    {
         if (expected != actual)
             fail(message);
     }
 
-    public static void assertNotEquals(String message, long expected, long actual) {
+    public static void assertNotEquals(String message, long expected, long actual)
+    {
         if (expected == actual)
             fail(message);
     }
 
-    public static void assertNotNull(String message, Object object) {
+    public static void assertNotNull(String message, Object object)
+    {
         if (object == null)
             fail(message);
     }
 
-    public static void assertTrue(String message, boolean condition) {
+    public static void assertTrue(String message, boolean condition)
+    {
         if (!condition)
             fail(message);
     }
 
-    public static void assertFalse(String message, boolean condition) {
+    public static void assertFalse(String message, boolean condition)
+    {
         if (condition)
             fail(message);
     }
 
 
-    public static void fail(String message) {
+    public static void fail(String message)
+    {
         throw new AssertionError(message);
     }
-
 }

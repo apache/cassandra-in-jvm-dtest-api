@@ -29,7 +29,8 @@ public abstract class DistributedTestBase
         System.gc();
     }
 
-    public static void beforeClass() throws Throwable {
+    public static void beforeClass() throws Throwable
+    {
         ICluster.setup();
     }
 
@@ -52,6 +53,4 @@ public abstract class DistributedTestBase
         cluster.schemaChange("CREATE KEYSPACE " + KEYSPACE + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': " + replicationFactor + "};");
         return cluster;
     }
-
-
 }
