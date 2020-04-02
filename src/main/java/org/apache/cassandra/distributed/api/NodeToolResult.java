@@ -18,10 +18,14 @@
 
 package org.apache.cassandra.distributed.api;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.management.Notification;
 
 import org.apache.cassandra.distributed.shared.AssertUtils;
@@ -70,20 +74,29 @@ public class NodeToolResult
     {
         public Asserts success()
         {
-            AssertUtils.assertEquals("nodetool command " + commandAndArgs[0] + " was not successful", 0, rc);
+            if (rc != 0)
+                fail("was not successful");
             return this;
         }
 
         public Asserts failure()
         {
-            AssertUtils.assertNotEquals("nodetool command " + commandAndArgs[0] + " was successful but not expected to be", 0, rc);
+            if (rc == 0)
+                fail("was successful but not expected to be");
             return this;
         }
 
         public Asserts errorContains(String msg)
         {
+            return errorContainsAny(msg);
+        }
+
+        public Asserts errorContainsAny(String... messages)
+        {
+            AssertUtils.assertNotEquals("no error messages defined to check against", 0, messages.length);
             AssertUtils.assertNotNull("No exception was found but expected one", error);
-            AssertUtils.assertTrue("Error message '" + error.getMessage() + "' does not contain '" + msg + "'", error.getMessage().contains(msg));
+            if (!Stream.of(messages).anyMatch(msg -> error.getMessage().contains(msg)))
+                fail("Error message '" + error.getMessage() + "' does not contain any of " + Arrays.toString(messages));
             return this;
         }
 
@@ -98,7 +111,7 @@ public class NodeToolResult
                     return this;
                 }
             }
-            AssertUtils.fail("Unable to locate message " + msg + " in notifications: " + notifications);
+            fail("Unable to locate message " + msg + " in notifications: " + NodeToolResult.toString(notifications));
             return this; // unreachable
         }
 
@@ -117,9 +130,44 @@ public class NodeToolResult
                     }
                 }
             }
-            AssertUtils.fail("Unable to locate message '" + msg + "' in notifications: " + notifications);
+            fail("Unable to locate message '" + msg + "' in notifications: " + NodeToolResult.toString(notifications));
             return this; // unreachable
         }
+
+        private void fail(String message)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("nodetool command ").append(Arrays.toString(commandAndArgs)).append(" ").append(message).append("\n");
+            sb.append("Notifications:\n");
+            for (Notification n : notifications)
+                sb.append(NodeToolResult.toString(n)).append("\n");
+            if (error != null)
+                sb.append("Error:\n").append(getStackTraceAsString(error)).append("\n");
+            throw new AssertionError(sb.toString());
+        }
+    }
+
+    private static String getStackTraceAsString(Throwable throwable) {
+        StringWriter stringWriter = new StringWriter();
+        throwable.printStackTrace(new PrintWriter(stringWriter));
+        return stringWriter.toString();
+    }
+
+    private static String toString(Collection<Notification> notifications)
+    {
+        return notifications.stream().map(NodeToolResult::toString).collect(Collectors.joining(", "));
+    }
+
+    private static String toString(Notification notification)
+    {
+        ProgressEventType type = ProgressEventType.values()[notificationType(notification)];
+        String msg = notification.getMessage();
+        Object src = notification.getSource();
+        return "Notification{" +
+               "type=" + type +
+               ", src=" + src +
+               ", message=" + msg +
+               "}";
     }
 
     private static int notificationType(Notification n)
