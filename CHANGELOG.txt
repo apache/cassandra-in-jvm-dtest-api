@@ -1,4 +1,0 @@
-# 0.0.2
-
-CASSANDRA-15684: Improve error codes in NodeToolResult to produce better errors and to allow Any style message checks
-CASSANDRA-15713: Make shared class filter for InstanceClassLoader pluggable

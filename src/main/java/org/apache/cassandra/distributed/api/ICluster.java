@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 
 public interface ICluster<I extends IInstance> extends AutoCloseable
 {
+    public static final String PROPERTY_PREFIX = "cassandra.test";
+
     void startup();
 
     I bootstrap(IInstanceConfig config);
@@ -89,16 +91,15 @@ public interface ICluster<I extends IInstance> extends AutoCloseable
         {
             File root = Files.createTempDirectory("in-jvm-dtest").toFile();
             root.deleteOnExit();
-            String testConfPath = "test/conf/logback-dtest.xml";
-            Path logConfPath = Paths.get(root.getPath(), "/logback-dtest.xml");
-
+            String logConfigPropertyName = System.getProperty(PROPERTY_PREFIX + ".logConfigProperty", "logback.configurationFile");
+            Path testConfPath = Paths.get(System.getProperty(PROPERTY_PREFIX + ".logConfigPath", "test/conf/logback-dtest.xml"));
+            Path logConfPath = Paths.get(root.getPath(), testConfPath.getFileName().toString());
             if (!logConfPath.toFile().exists())
             {
-                Files.copy(new File(testConfPath).toPath(),
-                           logConfPath);
+                Files.copy(testConfPath, logConfPath);
             }
 
-            System.setProperty("logback.configurationFile", "file://" + logConfPath);
+            System.setProperty(logConfigPropertyName, "file://" + logConfPath);
         }
         catch (IOException e)
         {
