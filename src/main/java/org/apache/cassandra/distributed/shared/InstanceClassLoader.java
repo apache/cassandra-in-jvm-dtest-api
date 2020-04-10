@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 
 public class InstanceClassLoader extends URLClassLoader
 {
-    private static final Predicate<String> sharePackage = name ->
+    private static final Predicate<String> DEFAULT_SHARED_PACKAGES = name ->
                                                           name.startsWith("org.apache.cassandra.distributed.api.")
                                                           || name.startsWith("org.apache.cassandra.distributed.shared.")
                                                           || name.startsWith("sun.")
@@ -45,14 +45,26 @@ public class InstanceClassLoader extends URLClassLoader
     private final int generation; // used to help debug class loader leaks, by helping determine which classloaders should have been collected
     private final int id;
     private final ClassLoader sharedClassLoader;
+    private final Predicate<String> loadShared;
 
     public InstanceClassLoader(int generation, int id, URL[] urls, ClassLoader sharedClassLoader)
+    {
+        this(generation, id, urls, sharedClassLoader, DEFAULT_SHARED_PACKAGES);
+    }
+
+    public InstanceClassLoader(int generation, int id, URL[] urls, ClassLoader sharedClassLoader, Predicate<String> loadShared)
     {
         super(urls, null);
         this.urls = urls;
         this.sharedClassLoader = sharedClassLoader;
         this.generation = generation;
         this.id = id;
+        this.loadShared = loadShared == null ? DEFAULT_SHARED_PACKAGES : loadShared;
+    }
+
+    public static Predicate<String> getDefaultLoadSharedFilter()
+    {
+        return DEFAULT_SHARED_PACKAGES;
     }
 
     public int getClusterGeneration()
@@ -68,7 +80,7 @@ public class InstanceClassLoader extends URLClassLoader
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException
     {
-        if (sharePackage.test(name))
+        if (loadShared.test(name))
             return sharedClassLoader.loadClass(name);
 
         return loadClassInternal(name);
