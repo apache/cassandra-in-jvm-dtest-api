@@ -38,6 +38,7 @@ public class InstanceClassLoader extends URLClassLoader
                                                           || name.startsWith("javax.")
                                                           || name.startsWith("jdk.")
                                                           || name.startsWith("netscape.")
+                                                          || name.startsWith("org.w3c.dom")
                                                           || name.startsWith("org.xml.sax.");
 
     private volatile boolean isClosed = false;
