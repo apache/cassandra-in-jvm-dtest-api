@@ -26,19 +26,20 @@ import java.util.function.Predicate;
 
 public class InstanceClassLoader extends URLClassLoader
 {
-    private static final Predicate<String> DEFAULT_SHARED_PACKAGES = name ->
-                                                          name.startsWith("org.apache.cassandra.distributed.api.")
-                                                          || name.startsWith("org.apache.cassandra.distributed.shared.")
-                                                          || name.startsWith("sun.")
-                                                          || name.startsWith("oracle.")
-                                                          || name.startsWith("com.intellij.")
-                                                          || name.startsWith("com.sun.")
-                                                          || name.startsWith("com.oracle.")
-                                                          || name.startsWith("java.")
-                                                          || name.startsWith("javax.")
-                                                          || name.startsWith("jdk.")
-                                                          || name.startsWith("netscape.")
-                                                          || name.startsWith("org.xml.sax.");
+    private static final Predicate<String> DEFAULT_SHARED_PACKAGES =
+              name ->
+              name.startsWith("org.apache.cassandra.distributed.api.")
+              || name.startsWith("org.apache.cassandra.distributed.shared.")
+              || name.startsWith("sun.")
+              || name.startsWith("oracle.")
+              || name.startsWith("com.intellij.")
+              || name.startsWith("com.sun.")
+              || name.startsWith("com.oracle.")
+              || name.startsWith("java.")
+              || name.startsWith("javax.")
+              || name.startsWith("jdk.")
+              || name.startsWith("netscape.")
+              || name.startsWith("org.xml.sax.");
 
     private volatile boolean isClosed = false;
     private final URL[] urls;
