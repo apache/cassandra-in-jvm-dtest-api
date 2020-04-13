@@ -92,13 +92,11 @@ public interface ICluster<I extends IInstance> extends AutoCloseable
             File root = Files.createTempDirectory("in-jvm-dtest").toFile();
             root.deleteOnExit();
             String logConfigPropertyName = System.getProperty(PROPERTY_PREFIX + ".logConfigProperty", "logback.configurationFile");
-            String testConfPath = System.getProperty(PROPERTY_PREFIX + ".logConfigPath", "test/conf/logback-dtest.xml");
-            Path logConfPath = Paths.get(root.getPath(), "/logback-dtest.xml");
-
+            Path testConfPath = Paths.get(System.getProperty(PROPERTY_PREFIX + ".logConfigPath", "test/conf/logback-dtest.xml"));
+            Path logConfPath = Paths.get(root.getPath(), testConfPath.getFileName().toString());
             if (!logConfPath.toFile().exists())
             {
-                Files.copy(new File(testConfPath).toPath(),
-                           logConfPath);
+                Files.copy(testConfPath, logConfPath);
             }
 
             System.setProperty(logConfigPropertyName, "file://" + logConfPath);
