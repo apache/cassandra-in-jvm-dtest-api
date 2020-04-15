@@ -34,7 +34,7 @@ public abstract class DistributedTestBase
         ICluster.setup();
     }
 
-    public abstract <I extends IInstance, C extends ICluster> Builder<I, C> builder();
+    public abstract <I extends IInstance, C extends ICluster, B extends AbstractBuilder<I, C, B>> AbstractBuilder<I, C, B> builder();
 
     public static String KEYSPACE = "distributed_test_keyspace";
 
