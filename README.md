@@ -2,6 +2,13 @@
 
 Shared API package for in-JVM distributed tests.
 
+# Publishing snapshot
+
+```
+mvn versions:set -DnewVersion=0.0.2-`git rev-parse --short HEAD`-SNAPSHOT
+mvn deploy
+```
+
 # Releasing
 
 1. Prepare the release:
