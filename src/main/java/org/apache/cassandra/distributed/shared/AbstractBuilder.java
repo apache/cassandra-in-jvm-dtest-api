@@ -18,22 +18,20 @@
 
 package org.apache.cassandra.distributed.shared;
 
+import org.apache.cassandra.distributed.api.ICluster;
+import org.apache.cassandra.distributed.api.IInstance;
+import org.apache.cassandra.distributed.api.IInstanceConfig;
+import org.apache.cassandra.distributed.api.TokenSupplier;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import org.apache.cassandra.distributed.api.ICluster;
-import org.apache.cassandra.distributed.api.IInstance;
-import org.apache.cassandra.distributed.api.IInstanceConfig;
-import org.apache.cassandra.distributed.api.TokenSupplier;
 
 import static org.apache.cassandra.distributed.api.TokenSupplier.evenlyDistributedTokens;
 
@@ -58,22 +56,6 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public AbstractBuilder(Factory<I, C, B> factory)
     {
         this.factory = factory;
-    }
-
-    public static String getSubnetPrefix(AbstractBuilder<?, ?, ?> builder)
-    {
-        return "127.0." + builder.getSubnet();
-    }
-
-    public static String getAddress(AbstractBuilder<?, ?, ?> builder, int nodeNum)
-    {
-        return getSubnetPrefix(builder) + "." + nodeNum;
-    }
-
-    public static NetworkTopology getNetworkTopology(AbstractBuilder<?, ?, ?> builder)
-    {
-        String ipPrefix = getSubnetPrefix(builder) + ".";
-        return NetworkTopology.build(ipPrefix, builder.getBroadcastPort(), builder.getNodeIdTopology());
     }
 
     public int getNodeCount() {
