@@ -160,7 +160,7 @@ public final class QueryResults
                 }
             }
             current = null;
-            return iterator.hasNext();
+            return false;
         }
 
         @Override
