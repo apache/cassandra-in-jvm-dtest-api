@@ -31,7 +31,12 @@ public interface IInstance extends IIsolatedExecutor
 
     void schemaChangeInternal(String query);
 
-    public Object[][] executeInternal(String query, Object... args);
+    default Object[][] executeInternal(String query, Object... args)
+    {
+        return executeInternalWithResult(query, args).toObjectArrays();
+    }
+
+    SimpleQueryResult executeInternalWithResult(String query, Object... args);
 
     IInstanceConfig config();
 

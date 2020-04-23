@@ -147,7 +147,8 @@ public class NodeToolResult
         }
     }
 
-    private static String getStackTraceAsString(Throwable throwable) {
+    private static String getStackTraceAsString(Throwable throwable)
+    {
         StringWriter stringWriter = new StringWriter();
         throwable.printStackTrace(new PrintWriter(stringWriter));
         return stringWriter.toString();

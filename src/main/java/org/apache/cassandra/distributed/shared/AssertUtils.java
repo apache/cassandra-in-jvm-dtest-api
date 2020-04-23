@@ -18,6 +18,10 @@
 
 package org.apache.cassandra.distributed.shared;
 
+import org.apache.cassandra.distributed.api.QueryResult;
+import org.apache.cassandra.distributed.api.SimpleQueryResult;
+import org.apache.cassandra.distributed.api.Row;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -25,6 +29,34 @@ import java.util.List;
 
 public class AssertUtils
 {
+
+    public static void assertRows(QueryResult actual, QueryResult expected)
+    {
+        if (actual instanceof SimpleQueryResult && expected instanceof SimpleQueryResult)
+        {
+            assertRows((SimpleQueryResult) actual, (SimpleQueryResult) expected);
+        }
+        else
+        {
+            assertRows(actual.map(Row::toObjectArray), expected.map(Row::toObjectArray));
+        }
+    }
+
+    public static void assertRows(SimpleQueryResult actual, SimpleQueryResult expected)
+    {
+        while (actual.hasNext()) {
+            if (!expected.hasNext())
+                throw new AssertionError(rowsNotEqualErrorMessage(actual, expected));
+
+            Row next = actual.next();
+            Row exectedRow = expected.next();
+
+            assertTrue(rowsNotEqualErrorMessage(actual, expected),
+                    Arrays.equals(next.toObjectArray(), exectedRow.toObjectArray()));
+        }
+        if (expected.hasNext())
+            throw new AssertionError(rowsNotEqualErrorMessage(actual, expected));
+    }
 
     public static void assertRows(Object[][] actual, Object[]... expected)
     {
@@ -80,6 +112,11 @@ public class AssertUtils
         return String.format("Expected: %s\nActual:%s\n",
                              Arrays.toString(expected),
                              Arrays.toString(actual));
+    }
+
+    public static String rowsNotEqualErrorMessage(SimpleQueryResult actual, SimpleQueryResult expected)
+    {
+        return String.format("Expected: %s\nActual: %s\n", expected, actual);
     }
 
     public static String rowsNotEqualErrorMessage(Object[][] actual, Object[][] expected)
