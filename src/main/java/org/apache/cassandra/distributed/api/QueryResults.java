@@ -82,8 +82,8 @@ public final class QueryResults
                     numColumns = columns.length;
 
                 if (numColumns != columns.length)
-                    throw new AssertionError("Attempted to add row with different column count; " +
-                            "expected " + numColumns + " columns but given " + columns);
+                    throw new AssertionError("Attempted to add column names with different column count; " +
+                            "expected " + numColumns + " columns but given " + Arrays.toString(columns));
             }
 
             names = columns;
@@ -97,7 +97,7 @@ public final class QueryResults
 
             if (numColumns != columns.length)
                 throw new AssertionError("Attempted to add row with different column count; " +
-                        "expected " + numColumns + " columns but given " + columns);
+                        "expected " + numColumns + " columns but given " + Arrays.toString(columns));
             results.add(columns);
             return this;
         }
