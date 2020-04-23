@@ -96,6 +96,15 @@ public class CompleteQueryResult implements QueryResult
     }
 
     /**
+     * Reset the cursor to the start of the query result; if the query result has not been iterated, this has no effect.
+     */
+    public void reset()
+    {
+        offset = -1;
+        row.setResults(null);
+    }
+
+    /**
      * Get all rows as a 2d array.  Any calls to {@link #filter(Predicate)} will be ignored and the array returned will
      * be the full set from the query.
      */
