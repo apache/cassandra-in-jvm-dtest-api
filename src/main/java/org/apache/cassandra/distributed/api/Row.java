@@ -28,8 +28,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 /**
  * Data representing a single row in a query result.
@@ -50,21 +48,11 @@ public class Row
     {
         Objects.requireNonNull(names, "names");
         this.names = names;
-        // when the names are not known all the columns are null
-        // if there is a single column with a non-null name then
-        // the by index will be used.
-        if (Stream.of(names).allMatch(i -> i == null))
+        this.nameIndex = new HashMap<>(names.length);
+        for (int i = 0; i < names.length; i++)
         {
-            this.nameIndex = Collections.emptyMap();
-        }
-        else
-        {
-            this.nameIndex = new HashMap<>(names.length);
-            for (int i = 0; i < names.length; i++)
-            {
-                // if duplicate names, always index by the first one seen
-                nameIndex.putIfAbsent(names[i], i);
-            }
+            // if duplicate names, always index by the first one seen
+            nameIndex.putIfAbsent(names[i], i);
         }
     }
 
