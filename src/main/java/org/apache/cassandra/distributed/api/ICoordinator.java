@@ -18,6 +18,8 @@
 
 package org.apache.cassandra.distributed.api;
 
+import org.apache.cassandra.distributed.shared.FutureUtils;
+
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.Future;
@@ -30,13 +32,27 @@ public interface ICoordinator
         return executeWithResult(query, consistencyLevel, boundValues).toObjectArrays();
     }
 
-    QueryResult executeWithResult(String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+    CompleteQueryResult executeWithResult(String query, ConsistencyLevel consistencyLevel, Object... boundValues);
 
-    Iterator<Object[]> executeWithPaging(String query, ConsistencyLevel consistencyLevel, int pageSize, Object... boundValues);
+    default Iterator<Object[]> executeWithPaging(String query, ConsistencyLevel consistencyLevel, int pageSize, Object... boundValues) {
+        return executeWithPagingWithResult(query, consistencyLevel, pageSize, boundValues).map(Row::toObjectArray);
+    }
 
-    Future<Object[][]> asyncExecuteWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+    QueryResult executeWithPagingWithResult(String query, ConsistencyLevel consistencyLevel, int pageSize, Object... boundValues);
 
-    Object[][] executeWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+    default Future<Object[][]> asyncExecuteWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues) {
+        return FutureUtils.map(asyncExecuteWithTracingWithResult(sessionId, query, consistencyLevel, boundValues), r -> r.toObjectArrays());
+    }
+
+    Future<CompleteQueryResult> asyncExecuteWithTracingWithResult(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues);
+
+    default Object[][] executeWithTracing(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues) {
+        return executeWithTracingWithResult(sessionId, query, consistencyLevel, boundValues).toObjectArrays();
+    }
+
+    default CompleteQueryResult executeWithTracingWithResult(UUID sessionId, String query, ConsistencyLevel consistencyLevel, Object... boundValues) {
+        return FutureUtils.waitOn(asyncExecuteWithTracingWithResult(sessionId, query, consistencyLevel, boundValues));
+    }
 
     IInstance instance();
 }

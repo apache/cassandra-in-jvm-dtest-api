@@ -17,10 +17,15 @@
  */
 package org.apache.cassandra.distributed.api;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Function;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A table of data representing a complete query result.
@@ -55,23 +60,82 @@ import java.util.function.Predicate;
  * points to newer data.  If this behavior is not desirable and access is needed between calls, then {@link Row#copy()}
  * should be used; this will clone the {@link Row} and return a new object pointing to the same data.
  */
-public interface QueryResult extends Iterator<Row>
+public class CompleteQueryResult implements QueryResult
 {
-    List<String> getNames();
+    private final String[] names;
+    private final Object[][] results;
+    private final Predicate<Row> filter;
+    private final Row row;
+    private int offset = -1;
 
-    QueryResult filter(Predicate<Row> fn);
+    public CompleteQueryResult(String[] names, Object[][] results)
+    {
+        this.names = Objects.requireNonNull(names, "names");
+        this.results = results;
+        this.row = new Row(names);
+        this.filter = ignore -> true;
+    }
 
-    default <A> Iterator<A> map(Function<? super Row, ? extends A> fn) {
-        return new Iterator<A>() {
-            @Override
-            public boolean hasNext() {
-                return QueryResult.this.hasNext();
+    private CompleteQueryResult(String[] names, Object[][] results, Predicate<Row> filter, int offset)
+    {
+        this.names = names;
+        this.results = results;
+        this.filter = filter;
+        this.offset = offset;
+        this.row = new Row(names);
+    }
+
+    public List<String> getNames()
+    {
+        return Collections.unmodifiableList(Arrays.asList(names));
+    }
+
+    public CompleteQueryResult filter(Predicate<Row> fn)
+    {
+        return new CompleteQueryResult(names, results, filter.and(fn), offset);
+    }
+
+    /**
+     * Get all rows as a 2d array.  Any calls to {@link #filter(Predicate)} will be ignored and the array returned will
+     * be the full set from the query.
+     */
+    public Object[][] toObjectArrays()
+    {
+        return results;
+    }
+
+    @Override
+    public boolean hasNext()
+    {
+        if (results == null)
+            return false;
+        while ((offset += 1) < results.length)
+        {
+            row.setResults(results[offset]);
+            if (filter.test(row))
+            {
+                return true;
             }
+        }
+        row.setResults(null);
+        return false;
+    }
 
-            @Override
-            public A next() {
-                return fn.apply(QueryResult.this.next());
-            }
-        };
+    @Override
+    public Row next()
+    {
+        // no null check needed for results since offset only increments IFF results is not null
+        if (offset < 0 || offset >= results.length)
+            throw new NoSuchElementException();
+        return row;
+    }
+
+    @Override
+    public String toString() {
+        if (results == null)
+            return "[]";
+        return Stream.of(results)
+                .map(Arrays::toString)
+                .collect(Collectors.joining(",", "[", "]"));
     }
 }
