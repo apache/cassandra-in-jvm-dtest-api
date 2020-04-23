@@ -76,6 +76,16 @@ public final class QueryResults
 
         public Builder columnNames(String... columns)
         {
+            if (columns != null)
+            {
+                if (numColumns == UNSET)
+                    numColumns = columns.length;
+
+                if (numColumns != columns.length)
+                    throw new AssertionError("Attempted to add row with different column count; " +
+                            "expected " + numColumns + " columns but given " + columns);
+            }
+
             names = columns;
             return this;
         }
