@@ -28,11 +28,11 @@ import java.util.function.Predicate;
 
 public final class QueryResults
 {
-    private static final CompleteQueryResult EMPTY = new CompleteQueryResult(new String[0], null);
+    private static final SimpleQueryResult EMPTY = new SimpleQueryResult(new String[0], null);
 
     private QueryResults() {}
 
-    public static CompleteQueryResult getEmpty()
+    public static SimpleQueryResult empty()
     {
         return EMPTY;
     }
@@ -47,14 +47,17 @@ public final class QueryResults
     public static QueryResult fromObjectArrayIterator(String[] names, Iterator<Object[]> iterator)
     {
         Row row = new Row(names);
-        return fromIterator(names, new Iterator<Row>() {
+        return fromIterator(names, new Iterator<Row>()
+        {
             @Override
-            public boolean hasNext() {
+            public boolean hasNext()
+            {
                 return iterator.hasNext();
             }
 
             @Override
-            public Row next() {
+            public Row next()
+            {
                 row.setResults(iterator.next());
                 return row;
             }
@@ -74,7 +77,7 @@ public final class QueryResults
         private String[] names;
         private List<Object[]> results = new ArrayList<>();
 
-        public Builder columnNames(String... columns)
+        public Builder columns(String... columns)
         {
             if (columns != null)
             {
@@ -83,54 +86,52 @@ public final class QueryResults
 
                 if (numColumns != columns.length)
                     throw new AssertionError("Attempted to add column names with different column count; " +
-                            "expected " + numColumns + " columns but given " + Arrays.toString(columns));
+                                             "expected " + numColumns + " columns but given " + Arrays.toString(columns));
             }
 
             names = columns;
             return this;
         }
 
-        public Builder row(Object... columns)
+        public Builder row(Object... values)
         {
             if (numColumns == UNSET)
-                numColumns = columns.length;
+                numColumns = values.length;
 
-            if (numColumns != columns.length)
+            if (numColumns != values.length)
                 throw new AssertionError("Attempted to add row with different column count; " +
-                        "expected " + numColumns + " columns but given " + Arrays.toString(columns));
-            results.add(columns);
+                                         "expected " + numColumns + " columns but given " + Arrays.toString(values));
+            results.add(values);
             return this;
         }
 
-        public CompleteQueryResult build()
+        public SimpleQueryResult build()
         {
             if (names == null)
             {
                 if (numColumns == UNSET)
-                    return QueryResults.getEmpty();
+                    return QueryResults.empty();
                 names = new String[numColumns];
                 for (int i = 0; i < numColumns; i++)
                     names[i] = "unknown";
             }
-            return new CompleteQueryResult(names, results.stream().toArray(Object[][]::new));
+            return new SimpleQueryResult(names, results.stream().toArray(Object[][]::new));
         }
     }
 
     private static final class IteratorQueryResult implements QueryResult
     {
-        private final String[] names;
+        private final List<String> names;
         private final Iterator<Row> iterator;
         private final Predicate<Row> filter;
         private Row current;
 
         private IteratorQueryResult(String[] names, Iterator<Row> iterator)
         {
-            this.names = names;
-            this.iterator = iterator;
-            this.filter = ignore -> true;
+            this(Collections.unmodifiableList(Arrays.asList(names)), iterator, ignore -> true);
         }
 
-        private IteratorQueryResult(String[] names, Iterator<Row> iterator, Predicate<Row> filter)
+        private IteratorQueryResult(List<String> names, Iterator<Row> iterator, Predicate<Row> filter)
         {
             this.names = names;
             this.iterator = iterator;
@@ -138,9 +139,9 @@ public final class QueryResults
         }
 
         @Override
-        public List<String> getNames()
+        public List<String> names()
         {
-            return Collections.unmodifiableList(Arrays.asList(names));
+            return names;
         }
 
         @Override
@@ -152,9 +153,11 @@ public final class QueryResults
         @Override
         public boolean hasNext()
         {
-            while (iterator.hasNext()) {
+            while (iterator.hasNext())
+            {
                 Row row = iterator.next();
-                if (filter.test(row)) {
+                if (filter.test(row))
+                {
                     current = row;
                     return true;
                 }

@@ -35,7 +35,7 @@ public interface IInstance extends IIsolatedExecutor
         return executeInternalWithResult(query, args).toObjectArrays();
     }
 
-    CompleteQueryResult executeInternalWithResult(String query, Object... args);
+    SimpleQueryResult executeInternalWithResult(String query, Object... args);
 
     IInstanceConfig config();
 

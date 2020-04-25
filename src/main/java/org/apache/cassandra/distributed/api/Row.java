@@ -32,8 +32,8 @@ import java.util.UUID;
 /**
  * Data representing a single row in a query result.
  * <p>
- * This class is mutable from the parent {@link CompleteQueryResult} and can have the row it points to changed between calls
- * to {@link CompleteQueryResult#hasNext()}, for this reason it is unsafe to hold reference to this class after that call;
+ * This class is mutable from the parent {@link SimpleQueryResult} and can have the row it points to changed between calls
+ * to {@link SimpleQueryResult#hasNext()}, for this reason it is unsafe to hold reference to this class after that call;
  * to get around this, a call to {@link #copy()} will return a new object pointing to the same row.
  */
 public class Row
@@ -73,7 +73,7 @@ public class Row
     }
 
     /**
-     * Creates a copy of the current row; can be used past calls to {@link CompleteQueryResult#hasNext()}.
+     * Creates a copy of the current row; can be used past calls to {@link SimpleQueryResult#hasNext()}.
      */
     public Row copy()
     {

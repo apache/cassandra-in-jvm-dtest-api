@@ -18,7 +18,7 @@
 
 package org.apache.cassandra.distributed.shared;
 
-import org.apache.cassandra.distributed.api.CompleteQueryResult;
+import org.apache.cassandra.distributed.api.SimpleQueryResult;
 import org.apache.cassandra.distributed.api.Row;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ import java.util.List;
 public class AssertUtils
 {
 
-    public static void assertRows(CompleteQueryResult actual, CompleteQueryResult expected)
+    public static void assertRows(SimpleQueryResult actual, SimpleQueryResult expected)
     {
         while (actual.hasNext()) {
             if (!expected.hasNext())
@@ -101,7 +101,7 @@ public class AssertUtils
                              Arrays.toString(actual));
     }
 
-    public static String rowsNotEqualErrorMessage(CompleteQueryResult actual, CompleteQueryResult expected)
+    public static String rowsNotEqualErrorMessage(SimpleQueryResult actual, SimpleQueryResult expected)
     {
         return String.format("Expected: %s\nActual: %s\n", expected, actual);
     }
