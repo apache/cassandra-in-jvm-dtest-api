@@ -1,0 +1,7 @@
+# 0.0.2
+
+CASSANDRA-15684: Improve error codes in NodeToolResult to produce better errors and to allow Any style message checks
+CASSANDRA-15713: Make shared class filter for InstanceClassLoader pluggable
+CASSANDRA-15714: Add support for replacing logback with alternate logger config (like log4j2)
+CASSANDRA-15756: In-jvm dtest IInstance and ICoordinator should use QueryResult as the base API
+CASSANDRA-15733: Cluster builder should be provided to the factory and expose state
