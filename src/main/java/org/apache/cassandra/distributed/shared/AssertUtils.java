@@ -18,6 +18,7 @@
 
 package org.apache.cassandra.distributed.shared;
 
+import org.apache.cassandra.distributed.api.QueryResult;
 import org.apache.cassandra.distributed.api.SimpleQueryResult;
 import org.apache.cassandra.distributed.api.Row;
 
@@ -28,6 +29,18 @@ import java.util.List;
 
 public class AssertUtils
 {
+
+    public static void assertRows(QueryResult actual, QueryResult expected)
+    {
+        if (actual instanceof SimpleQueryResult && expected instanceof SimpleQueryResult)
+        {
+            assertRows((SimpleQueryResult) actual, (SimpleQueryResult) expected);
+        }
+        else
+        {
+            assertRows(actual.map(Row::toObjectArray), expected.map(Row::toObjectArray));
+        }
+    }
 
     public static void assertRows(SimpleQueryResult actual, SimpleQueryResult expected)
     {

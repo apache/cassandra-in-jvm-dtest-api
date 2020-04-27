@@ -59,17 +59,24 @@ public interface QueryResult extends Iterator<Row>
 {
     List<String> names();
 
-    QueryResult filter(Predicate<Row> fn);
+    default QueryResult filter(Predicate<Row> fn)
+    {
+        return QueryResults.filter(this, fn);
+    }
 
-    default <A> Iterator<A> map(Function<? super Row, ? extends A> fn) {
-        return new Iterator<A>() {
+    default <A> Iterator<A> map(Function<? super Row, ? extends A> fn)
+    {
+        return new Iterator<A>()
+        {
             @Override
-            public boolean hasNext() {
+            public boolean hasNext()
+            {
                 return QueryResult.this.hasNext();
             }
 
             @Override
-            public A next() {
+            public A next()
+            {
                 return fn.apply(QueryResult.this.next());
             }
         };

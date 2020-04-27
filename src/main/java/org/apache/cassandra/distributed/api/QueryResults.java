@@ -64,6 +64,11 @@ public final class QueryResults
         });
     }
 
+    public static QueryResult filter(QueryResult result, Predicate<Row> fn)
+    {
+        return new FilterQueryResult(result, fn);
+    }
+
     public static Builder builder()
     {
         return new Builder();
@@ -123,19 +128,16 @@ public final class QueryResults
     {
         private final List<String> names;
         private final Iterator<Row> iterator;
-        private final Predicate<Row> filter;
-        private Row current;
 
         private IteratorQueryResult(String[] names, Iterator<Row> iterator)
         {
-            this(Collections.unmodifiableList(Arrays.asList(names)), iterator, ignore -> true);
+            this(Collections.unmodifiableList(Arrays.asList(names)), iterator);
         }
 
-        private IteratorQueryResult(List<String> names, Iterator<Row> iterator, Predicate<Row> filter)
+        private IteratorQueryResult(List<String> names, Iterator<Row> iterator)
         {
             this.names = names;
             this.iterator = iterator;
-            this.filter = filter;
         }
 
         @Override
@@ -145,17 +147,42 @@ public final class QueryResults
         }
 
         @Override
-        public QueryResult filter(Predicate<Row> fn)
+        public boolean hasNext()
         {
-            return new IteratorQueryResult(names, iterator, filter.and(fn));
+            return iterator.hasNext();
+        }
+
+        @Override
+        public Row next()
+        {
+            return iterator.next();
+        }
+    }
+
+    private static final class FilterQueryResult implements QueryResult
+    {
+        private final QueryResult delegate;
+        private final Predicate<Row> filter;
+        private Row current;
+
+        private FilterQueryResult(QueryResult delegate, Predicate<Row> filter)
+        {
+            this.delegate = delegate;
+            this.filter = filter;
+        }
+
+        @Override
+        public List<String> names()
+        {
+            return delegate.names();
         }
 
         @Override
         public boolean hasNext()
         {
-            while (iterator.hasNext())
+            while (delegate.hasNext())
             {
-                Row row = iterator.next();
+                Row row = delegate.next();
                 if (filter.test(row))
                 {
                     current = row;

@@ -176,4 +176,23 @@ public class QueryResultTest
 
         assertThat(result).isEqualTo(Arrays.asList(1, 5, 1, 2));
     }
+
+    @Test
+    public void iteratorFilter()
+    {
+        String[] names = {"first"};
+        List<Object[]> values = new ArrayList<>();
+        values.add(new Object[] { "david" });
+        values.add(new Object[] { "alex" });
+        values.add(new Object[] { "dinesh" });
+
+        QueryResult qr = QueryResults.fromObjectArrayIterator(names, values.iterator())
+                .filter(r -> !"david".equals(r.getString("first")))
+                .filter(r -> !"alex".equals(r.getString("first")));
+
+        AssertUtils.assertRows(qr, QueryResults.builder()
+                                               .columns(names)
+                                               .row("dinesh")
+                                               .build());
+    }
 }
