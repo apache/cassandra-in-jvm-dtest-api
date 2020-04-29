@@ -15,7 +15,9 @@ mvn deploy
 
 ```
 mvn release:clean
-mvn release:prepare
+CURRENT=0.0.CURRENT
+NEXT_DEV=0.0.NEXT
+mvn -DreleaseVersion=$CURRENT-`git rev-parse --short HEAD` -Dtag=$CURRENT-`git rev-parse --short HEAD` -DdevelopmentVersion=$NEXT_DEV-SNAPSHOT release:prepare
 mvn release:perform
 ```
 
