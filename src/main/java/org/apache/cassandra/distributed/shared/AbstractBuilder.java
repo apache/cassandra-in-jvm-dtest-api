@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -52,6 +53,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private Consumer<IInstanceConfig> configUpdater;
     private ClassLoader sharedClassLoader = Thread.currentThread().getContextClassLoader();
     private int broadcastPort = 7012;
+    private BiConsumer<ClassLoader, Integer> instanceInitializer = (cl, id) -> {};
 
     public AbstractBuilder(Factory<I, C, B> factory)
     {
@@ -92,6 +94,11 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
 
     public int getBroadcastPort() {
         return broadcastPort;
+    }
+
+    public BiConsumer<ClassLoader, Integer> getInstanceInitializer()
+    {
+        return instanceInitializer;
     }
 
     public C start() throws IOException
@@ -252,6 +259,12 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public B withConfig(Consumer<IInstanceConfig> updater)
     {
         this.configUpdater = updater;
+        return (B) this;
+    }
+
+    public B withInstanceInitializer(BiConsumer<ClassLoader, Integer> instanceInitializer)
+    {
+        this.instanceInitializer = instanceInitializer;
         return (B) this;
     }
 
