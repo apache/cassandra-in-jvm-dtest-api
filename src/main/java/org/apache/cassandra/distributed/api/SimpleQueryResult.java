@@ -63,14 +63,21 @@ public class SimpleQueryResult implements QueryResult
 {
     private final String[] names;
     private final Object[][] results;
+    private final List<String> warnings;
     private final Predicate<Row> filter;
     private final Row row;
     private int offset = -1;
 
     public SimpleQueryResult(String[] names, Object[][] results)
     {
+        this(names, results, Collections.emptyList());
+    }
+
+    public SimpleQueryResult(String[] names, Object[][] results, List<String> warnings)
+    {
         this.names = Objects.requireNonNull(names, "names");
         this.results = results;
+        this.warnings = Objects.requireNonNull(warnings, "warnings");
         this.row = new Row(names);
         this.filter = ignore -> true;
     }
@@ -79,6 +86,7 @@ public class SimpleQueryResult implements QueryResult
     {
         this.names = names;
         this.results = results;
+        this.warnings = Collections.emptyList();
         this.filter = filter;
         this.offset = offset;
         this.row = new Row(names);
@@ -87,6 +95,12 @@ public class SimpleQueryResult implements QueryResult
     public List<String> names()
     {
         return Collections.unmodifiableList(Arrays.asList(names));
+    }
+
+    @Override
+    public List<String> warnings()
+    {
+        return Collections.unmodifiableList(warnings);
     }
 
     public SimpleQueryResult filter(Predicate<Row> fn)
