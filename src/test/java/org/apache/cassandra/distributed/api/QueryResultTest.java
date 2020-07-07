@@ -23,9 +23,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,6 +40,7 @@ public class QueryResultTest
         QueryResult result = QueryResults.empty();
 
         assertThat(result.names()).isEmpty();
+        assertThat(result.warnings()).isEmpty();
         assertThat(result.toString()).isEqualTo("[]");
 
         assertThat(result.hasNext()).isFalse();
@@ -50,6 +53,43 @@ public class QueryResultTest
         Iterator<Object> it = result.map(r -> r.get("undefined"));
         assertThat(it.hasNext()).isFalse();
         assertThatThrownBy(it::next).isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    public void warnings()
+    {
+        String[] names = { "fname", "lname"};
+        Object[][] rows = { new Object[] { "david", "capwell"} };
+        SimpleQueryResult result = new SimpleQueryResult(names, rows, Collections.singletonList("test warning"));
+        assertThat(result.warnings()).isEqualTo(Collections.singletonList("test warning"));
+    }
+
+    @Test
+    public void delegatedWarnings()
+    {
+        String[] names = { "fname", "lname"};
+        Object[][] rows = { new Object[] { "david", "capwell"} };
+        SimpleQueryResult delegate = new SimpleQueryResult(names, rows, Collections.singletonList("test warning"));
+        QueryResult filteredResult = QueryResults.filter(delegate, Objects::nonNull);
+        assertThat(filteredResult.warnings()).isEqualTo(Collections.singletonList("test warning"));
+    }
+
+    @Test
+    public void warningsFromBuilder()
+    {
+        String[] names = { "fname", "lname"};
+        Object[][] rows = { new Object[] { "david", "capwell"} };
+        String warning = "test warning";
+        SimpleQueryResult expected = new SimpleQueryResult(names, rows, Collections.singletonList(warning));
+
+        SimpleQueryResult fromBuilder = QueryResults.builder()
+                                                    .columns(names)
+                                                    .row(rows[0])
+                                                    .warning(warning)
+                                                    .build();
+        
+        assertThat(fromBuilder.warnings()).isEqualTo(Collections.singletonList(warning));
+        assertThat(fromBuilder.warnings()).isEqualTo(expected.warnings());
     }
 
     @Test

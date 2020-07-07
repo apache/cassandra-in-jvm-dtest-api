@@ -58,6 +58,8 @@ import java.util.function.Predicate;
 public interface QueryResult extends Iterator<Row>
 {
     List<String> names();
+    
+    List<String> warnings();
 
     default QueryResult filter(Predicate<Row> fn)
     {

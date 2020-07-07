@@ -80,7 +80,8 @@ public final class QueryResults
 
         private int numColumns = UNSET;
         private String[] names;
-        private List<Object[]> results = new ArrayList<>();
+        private final List<Object[]> results = new ArrayList<>();
+        private final List<String> warnings = new ArrayList<>();
 
         public Builder columns(String... columns)
         {
@@ -110,6 +111,12 @@ public final class QueryResults
             return this;
         }
 
+        public Builder warning(String message)
+        {
+            warnings.add(message);
+            return this;
+        }
+
         public SimpleQueryResult build()
         {
             if (names == null)
@@ -120,7 +127,8 @@ public final class QueryResults
                 for (int i = 0; i < numColumns; i++)
                     names[i] = "unknown";
             }
-            return new SimpleQueryResult(names, results.stream().toArray(Object[][]::new));
+            
+            return new SimpleQueryResult(names, results.toArray(new Object[0][]), warnings);
         }
     }
 
@@ -144,6 +152,12 @@ public final class QueryResults
         public List<String> names()
         {
             return names;
+        }
+
+        @Override
+        public List<String> warnings()
+        {
+            throw new UnsupportedOperationException("Warnings are not yet supported for " + getClass().getSimpleName());
         }
 
         @Override
@@ -175,6 +189,12 @@ public final class QueryResults
         public List<String> names()
         {
             return delegate.names();
+        }
+        
+        @Override 
+        public List<String> warnings()
+        {
+            return delegate.warnings();
         }
 
         @Override
