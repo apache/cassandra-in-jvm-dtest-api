@@ -34,7 +34,7 @@ public interface ICluster<I extends IInstance> extends AutoCloseable
 
     void startup();
 
-    I bootstrap(IInstanceConfig config);
+    I initialize(IInstanceConfig config);
 
     I get(int i);
 
