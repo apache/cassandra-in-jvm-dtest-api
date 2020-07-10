@@ -1,3 +1,7 @@
+# 0.0.4
+
+CASSANDRA-15920: Make SimpleQueryResult a container for client warnings, and expose those warnings via QueryResult
+
 # 0.0.3
 
 CASSANDRA-15851: Add instance initializer
