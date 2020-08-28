@@ -19,6 +19,7 @@
 package org.apache.cassandra.distributed.api;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -88,4 +89,6 @@ public interface IInstance extends IIsolatedExecutor
     void flush(String keyspace);
 
     void forceCompact(String keyspace, String table);
+
+    List<Throwable> getUncaughtExceptions();
 }
