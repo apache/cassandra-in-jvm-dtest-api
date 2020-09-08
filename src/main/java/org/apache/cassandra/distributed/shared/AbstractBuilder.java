@@ -54,6 +54,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private ClassLoader sharedClassLoader = Thread.currentThread().getContextClassLoader();
     private int broadcastPort = 7012;
     private BiConsumer<ClassLoader, Integer> instanceInitializer = (cl, id) -> {};
+    private int datadirCount = 3;
 
     public AbstractBuilder(Factory<I, C, B> factory)
     {
@@ -99,6 +100,11 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public BiConsumer<ClassLoader, Integer> getInstanceInitializer()
     {
         return instanceInitializer;
+    }
+
+    public int getDatadirCount()
+    {
+        return datadirCount;
     }
 
     public C start() throws IOException
@@ -267,6 +273,14 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         this.instanceInitializer = instanceInitializer;
         return (B) this;
     }
+
+    public B withDataDirCount(int datadirCount)
+    {
+        assert datadirCount > 0 : "data dir count requires a positive number but given " + datadirCount;
+        this.datadirCount = datadirCount;
+        return (B) this;
+    }
+
 
     static String dcName(int index)
     {
