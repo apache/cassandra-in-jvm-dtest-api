@@ -37,12 +37,22 @@ public class NodeToolResult
     private final List<Notification> notifications;
     private final Throwable error;
 
+    public final String capturedConsoleOut;
+    public final String capturedConsoleErr;
+
     public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error)
+    {
+        this(commandAndArgs, rc, notifications, error, null, null);
+    }
+
+    public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error, String capturedOut, String capturedErr)
     {
         this.commandAndArgs = commandAndArgs;
         this.rc = rc;
         this.notifications = notifications;
         this.error = error;
+        this.capturedConsoleErr = capturedErr;
+        this.capturedConsoleOut = capturedOut;
     }
 
     public String[] getCommandAndArgs()
@@ -131,6 +141,30 @@ public class NodeToolResult
                 }
             }
             fail("Unable to locate message '" + msg + "' in notifications: " + NodeToolResult.toString(notifications));
+            return this; // unreachable
+        }
+
+        public Asserts capturedConsoleOutContains(String substring)
+        {
+            return capturedConsoleOutputContains(substring, true);
+        }
+
+        public Asserts capturedConsoleErrContains(String substring)
+        {
+            return capturedConsoleOutputContains(substring, false);
+        }
+
+        private Asserts capturedConsoleOutputContains(String substring, boolean isOut)
+        {
+            String name = isOut ? "capturedConsoleOut" : "capturedConsoleErr";
+            String output = isOut ? capturedConsoleOut : capturedConsoleErr;
+            AssertUtils.assertNotNull(name + " not defined", output);
+            AssertUtils.assertFalse("Found no " + name, output.isEmpty());
+            if (output.contains(substring))
+            {
+                return this;
+            }
+            fail("Unable to locate substring '" + substring + "' in " + name + ": " + output);
             return this; // unreachable
         }
 
