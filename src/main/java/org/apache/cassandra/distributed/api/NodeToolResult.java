@@ -36,9 +36,8 @@ public class NodeToolResult
     private final int rc;
     private final List<Notification> notifications;
     private final Throwable error;
-
-    public final String capturedConsoleOut;
-    public final String capturedConsoleErr;
+    private final String capturedConsoleOut;
+    private final String capturedConsoleErr;
 
     public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error)
     {
@@ -73,6 +72,16 @@ public class NodeToolResult
     public Throwable getError()
     {
         return error;
+    }
+
+    public String getStdOut()
+    {
+        return capturedConsoleOut;
+    }
+
+    public String getStdErr()
+    {
+        return capturedConsoleErr;
     }
 
     public Asserts asserts()
@@ -144,12 +153,12 @@ public class NodeToolResult
             return this; // unreachable
         }
 
-        public Asserts capturedConsoleOutContains(String substring)
+        public Asserts stdoutContains(String substring)
         {
             return capturedConsoleOutputContains(substring, true);
         }
 
-        public Asserts capturedConsoleErrContains(String substring)
+        public Asserts stderrContains(String substring)
         {
             return capturedConsoleOutputContains(substring, false);
         }
@@ -159,7 +168,6 @@ public class NodeToolResult
             String name = isOut ? "capturedConsoleOut" : "capturedConsoleErr";
             String output = isOut ? capturedConsoleOut : capturedConsoleErr;
             AssertUtils.assertNotNull(name + " not defined", output);
-            AssertUtils.assertFalse("Found no " + name, output.isEmpty());
             if (output.contains(substring))
             {
                 return this;
