@@ -36,22 +36,22 @@ public class NodeToolResult
     private final int rc;
     private final List<Notification> notifications;
     private final Throwable error;
-    private final String capturedConsoleOut;
-    private final String capturedConsoleErr;
+    private final String stdout;
+    private final String stderr;
 
     public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error)
     {
         this(commandAndArgs, rc, notifications, error, null, null);
     }
 
-    public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error, String capturedOut, String capturedErr)
+    public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error, String stdout, String stderr)
     {
         this.commandAndArgs = commandAndArgs;
         this.rc = rc;
         this.notifications = notifications;
         this.error = error;
-        this.capturedConsoleErr = capturedErr;
-        this.capturedConsoleOut = capturedOut;
+        this.stdout = stdout;
+        this.stderr = stderr;
     }
 
     public String[] getCommandAndArgs()
@@ -74,14 +74,14 @@ public class NodeToolResult
         return error;
     }
 
-    public String getStdOut()
+    public String getStdout()
     {
-        return capturedConsoleOut;
+        return stdout;
     }
 
-    public String getStdErr()
+    public String getStderr()
     {
-        return capturedConsoleErr;
+        return stderr;
     }
 
     public Asserts asserts()
@@ -163,10 +163,10 @@ public class NodeToolResult
             return capturedConsoleOutputContains(substring, false);
         }
 
-        private Asserts capturedConsoleOutputContains(String substring, boolean isOut)
+        private Asserts capturedConsoleOutputContains(String substring, boolean isStdout)
         {
-            String name = isOut ? "capturedConsoleOut" : "capturedConsoleErr";
-            String output = isOut ? capturedConsoleOut : capturedConsoleErr;
+            String name = isStdout ? "stdout" : "stderr";
+            String output = isStdout ? stdout : stderr;
             AssertUtils.assertNotNull(name + " not defined", output);
             if (output.contains(substring))
             {
