@@ -34,8 +34,8 @@ public class NetworkTopology
 
     public static class DcAndRack
     {
-        private final String dc;
-        private final String rack;
+        public final String dc;
+        public final String rack;
 
         private DcAndRack(String dc, String rack)
         {

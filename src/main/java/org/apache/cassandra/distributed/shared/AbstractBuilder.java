@@ -26,7 +26,10 @@ import org.apache.cassandra.distributed.api.TokenSupplier;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -55,6 +58,8 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private int broadcastPort = 7012;
     private BiConsumer<ClassLoader, Integer> instanceInitializer = (cl, id) -> {};
     private int datadirCount = 3;
+    private final List<Rack> racks = new ArrayList<>();
+    private boolean finalised;
 
     public AbstractBuilder(Factory<I, C, B> factory)
     {
@@ -116,18 +121,11 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
 
     public C createWithoutStarting() throws IOException
     {
+        finaliseBuilder();
         if (root == null)
             root = Files.createTempDirectory("dtests").toFile();
 
-        if (nodeCount <= 0)
-            throw new IllegalStateException("Cluster must have at least one node");
-
         root.mkdirs();
-
-        if (nodeIdTopology == null)
-            nodeIdTopology = IntStream.rangeClosed(1, nodeCount).boxed()
-                                      .collect(Collectors.toMap(nodeId -> nodeId,
-                                                                nodeId -> NetworkTopology.dcAndRack(dcName(0), rackName(0))));
 
         // TODO: make token allocation strategy configurable
         if (tokenSupplier == null)
@@ -159,72 +157,72 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return (B) this;
     }
 
+    /**
+     * Start this many nodes initially
+     *
+     * Note that when using this in combination with withNodeIdTopology or withRacks/withDCs/... we
+     * might reduce the actual number of nodes if there are not enough nodes configured in the node id
+     * topology. For tests where additional nodes are started after the initial ones, it is ok to have
+     * nodeCount < node id topology size
+     */
     public B withNodes(int nodeCount)
     {
         this.nodeCount = nodeCount;
         return (B) this;
     }
 
+    /**
+     * Adds dcCount datacenters, splits the nodeCount over these dcs
+     */
     public B withDCs(int dcCount)
     {
         return withRacks(dcCount, 1);
     }
 
+    /**
+     * Adds this many racks per datacenter
+     *
+     * splits nodeCount over these racks/dcs
+     *
+     */
     public B withRacks(int dcCount, int racksPerDC)
     {
-        if (nodeCount == 0)
-            throw new IllegalStateException("Node count will be calculated. Do not supply total node count in the builder");
+        assert dcCount > 0 && racksPerDC > 0 : "Both dcCount and racksPerDC must be > 0";
 
-        int totalRacks = dcCount * racksPerDC;
-        int nodesPerRack = (nodeCount + totalRacks - 1) / totalRacks; // round up to next integer
-        return withRacks(dcCount, racksPerDC, nodesPerRack);
-    }
-
-    public B withRacks(int dcCount, int racksPerDC, int nodesPerRack)
-    {
-        if (nodeIdTopology != null)
-            throw new IllegalStateException("Network topology already created. Call withDCs/withRacks once or before withDC/withRack calls");
-
-        nodeIdTopology = new HashMap<>();
-        int nodeId = 1;
         for (int dc = 1; dc <= dcCount; dc++)
-        {
             for (int rack = 1; rack <= racksPerDC; rack++)
-            {
-                for (int rackNodeIdx = 0; rackNodeIdx < nodesPerRack; rackNodeIdx++)
-                    nodeIdTopology.put(nodeId++, NetworkTopology.dcAndRack(dcName(dc), rackName(rack)));
-            }
-        }
-        // adjust the node count to match the allocatation
-        final int adjustedNodeCount = dcCount * racksPerDC * nodesPerRack;
-        if (adjustedNodeCount != nodeCount)
-        {
-            assert adjustedNodeCount > nodeCount : "withRacks should only ever increase the node count";
-            System.out.println(String.format("Network topology of %s DCs with %s racks per DC and %s nodes per rack required increasing total nodes to %s",
-                                             dcCount, racksPerDC, nodesPerRack, adjustedNodeCount));
-            nodeCount = adjustedNodeCount;
-        }
+                withRack(dcName(dc), rackName(rack), -1);
         return (B) this;
     }
 
+    /**
+     * Creates a cluster with dcCount datacenters, racksPerDC racks in each dc and nodesPerRack nodes in each rack
+     *
+     * Note that node count must be >= dcCount * datacenters * racksPerDC, if it is smaller it will get adjusted up.
+     */
+    public B withRacks(int dcCount, int racksPerDC, int nodesPerRack)
+    {
+        assert dcCount > 0 && racksPerDC > 0 && nodesPerRack > 0 : "dcCount, racksPerDC and nodesPerRack must be > 0";
+        for (int dc = 1; dc <= dcCount; dc++)
+            for (int rack = 1; rack <= racksPerDC; rack++)
+                withRack(dcName(dc), rackName(rack), nodesPerRack);
+        return (B) this;
+    }
+
+    /**
+     * Add a dc with name dcName containing a single rack with nodeCount nodes
+     */
     public B withDC(String dcName, int nodeCount)
     {
         return withRack(dcName, rackName(1), nodeCount);
     }
 
+    /**
+     * Add a rack in dcName with name rackName containing nodesInRack nodes
+     */
     public B withRack(String dcName, String rackName, int nodesInRack)
     {
-        if (nodeIdTopology == null)
-        {
-            if (nodeCount > 0)
-                throw new IllegalStateException("Node count must not be explicitly set, or allocated using withDCs/withRacks");
-
-            nodeIdTopology = new HashMap<>();
-        }
-        for (int nodeId = nodeCount + 1; nodeId <= nodeCount + nodesInRack; nodeId++)
-            nodeIdTopology.put(nodeId, NetworkTopology.dcAndRack(dcName, rackName));
-
-        nodeCount += nodesInRack;
+        racks.add(new Rack(dcName, rackName, nodesInRack));
         return (B) this;
     }
 
@@ -238,12 +236,6 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
             if (nodeIdTopology.get(nodeId) == null)
                 throw new IllegalStateException("Topology is missing entry for nodeId " + nodeId);
         });
-
-        if (nodeCount != nodeIdTopology.size())
-        {
-            nodeCount = nodeIdTopology.size();
-            System.out.println(String.format("Adjusting node count to %s for supplied network topology", nodeCount));
-        }
 
         this.nodeIdTopology = new HashMap<>(nodeIdTopology);
 
@@ -281,6 +273,93 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return (B) this;
     }
 
+    private void finaliseBuilder()
+    {
+        if (finalised)
+            return;
+        finalised = true;
+
+        if (!racks.isEmpty())
+        {
+            setRacks();
+        }
+        else if (nodeIdTopology != null)
+        {
+            if (nodeIdTopology.size() < nodeCount)
+            {
+                System.out.println("Adjusting node count since nodeIdTopology contains fewer nodes");
+                nodeCount = nodeIdTopology.size();
+            }
+            else if (nodeIdTopology.size() > nodeCount)
+            {
+                System.out.printf("nodeIdTopology configured for %d nodes while nodeCount is %d%n", nodeIdTopology.size(), nodeCount);
+            }
+        }
+        else
+        {
+            nodeIdTopology = IntStream.rangeClosed(1, nodeCount).boxed()
+                                      .collect(Collectors.toMap(nodeId -> nodeId,
+                                                                nodeId -> NetworkTopology.dcAndRack(dcName(0), rackName(0))));
+        }
+
+        if (nodeCount <= 0)
+            throw new IllegalStateException("Cluster must have at least one node");
+
+        System.out.println("Node id topology:");
+        for (int i = 1; i <= nodeIdTopology.size(); i++)
+        {
+            NetworkTopology.DcAndRack dcAndRack = nodeIdTopology.get(i);
+            System.out.printf("node %d: dc = %s, rack = %s%n", i, dcAndRack.dc, dcAndRack.rack);
+        }
+        System.out.printf("Configured node count: %d, nodeIdTopology size: %d%n", nodeCount, nodeIdTopology.size());
+    }
+
+    private void setRacks()
+    {
+        if (nodeIdTopology == null)
+            nodeIdTopology = new HashMap<>();
+
+        boolean shouldCalculatePerRackCount = false;
+        boolean hasExplicitPerRackCount = false;
+        for (Rack rack : racks)
+        {
+            if (rack.rackNodeCount == -1)
+                shouldCalculatePerRackCount = true;
+            else
+                hasExplicitPerRackCount = true;
+        }
+
+        if (shouldCalculatePerRackCount && hasExplicitPerRackCount)
+            throw new IllegalStateException("Can't mix explicit and implicit per rack counts");
+
+        int nodeId = nodeIdTopology.isEmpty() ? 1 : Collections.max(nodeIdTopology.keySet()) + 1;
+        if (shouldCalculatePerRackCount)
+        {
+            if (nodeCount == 0)
+                throw new IllegalStateException("Node count must be set when not setting per rack counts");
+            int totalRacks = racks.size();
+            int nodesPerRack = (nodeCount + totalRacks - 1) / totalRacks;
+
+            for (Rack rack : racks)
+                for (int i = 1; i <= nodesPerRack; i++)
+                    nodeIdTopology.put(nodeId++, NetworkTopology.dcAndRack(rack.dcName, rack.rackName));
+        }
+        else
+        {
+            for (Rack rack : racks)
+                for (int i = 1; i <= rack.rackNodeCount; i++)
+                    nodeIdTopology.put(nodeId++, NetworkTopology.dcAndRack(rack.dcName, rack.rackName));
+        }
+
+        if (nodeCount != nodeIdTopology.size())
+        {
+            assert nodeIdTopology.size() > nodeCount : "withRacks should only ever increase the node count";
+            if (nodeCount == 0)
+                nodeCount =  nodeIdTopology.size();
+            else
+                System.out.printf("Network topology of %s requires more nodes, only starting %s out of %s configured nodes%n", nodeIdTopology, nodeCount, nodeIdTopology.size());
+        }
+    }
 
     static String dcName(int index)
     {
@@ -290,6 +369,20 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     static String rackName(int index)
     {
         return "rack" + index;
+    }
+
+    private static class Rack
+    {
+        final String dcName;
+        final String rackName;
+        final int rackNodeCount;
+
+        private Rack(String dcName, String rackName, int rackNodeCount)
+        {
+            this.dcName = dcName;
+            this.rackName = rackName;
+            this.rackNodeCount = rackNodeCount;
+        }
     }
 }
 
