@@ -24,6 +24,8 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public interface ICluster<I extends IInstance> extends AutoCloseable
@@ -53,6 +55,18 @@ public interface ICluster<I extends IInstance> extends AutoCloseable
     Stream<I> stream(String dcName, String rackName);
 
     IMessageFilters filters();
+
+    /**
+     * dynamically sets the current uncaught exceptions filter
+     *
+     * the predicate should return true if we should ignore the given throwable on the given instance
+     */
+    default void setUncaughtExceptionsFilter(BiPredicate<Integer, Throwable> ignoreThrowable) {}
+    default void setUncaughtExceptionsFilter(Predicate<Throwable> ignoreThrowable)
+    {
+        setUncaughtExceptionsFilter((ignored, throwable) -> ignoreThrowable.test(throwable));
+    }
+    default void checkAndResetUncaughtExceptions() {}
 
     static void setup() throws Throwable
     {
