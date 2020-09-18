@@ -155,24 +155,46 @@ public class NodeToolResult
 
         public Asserts stdoutContains(String substring)
         {
-            return capturedConsoleOutputContains(substring, true);
+            return assertConsoleOutput(substring, true, true);
         }
 
         public Asserts stderrContains(String substring)
         {
-            return capturedConsoleOutputContains(substring, false);
+            return assertConsoleOutput(substring, false, true);
         }
 
-        private Asserts capturedConsoleOutputContains(String substring, boolean isStdout)
+        public Asserts stdoutNotContains(String substring)
+        {
+            return assertConsoleOutput(substring, true, false);
+        }
+
+        public Asserts stderrNotContains(String substring)
+        {
+            return assertConsoleOutput(substring, false, false);
+        }
+
+        private Asserts assertConsoleOutput(String substring, boolean isStdout, boolean assertContains)
         {
             String name = isStdout ? "stdout" : "stderr";
             String output = isStdout ? stdout : stderr;
             AssertUtils.assertNotNull(name + " not defined", output);
-            if (output.contains(substring))
+            if (assertContains)
             {
-                return this;
+                if (output.contains(substring))
+                {
+                    return this;
+                }
+                fail("Unable to locate substring '" + substring + "' in " + name + ": " + output);
             }
-            fail("Unable to locate substring '" + substring + "' in " + name + ": " + output);
+            else
+            {
+                if (!output.contains(substring))
+                {
+                    return this;
+                }
+                fail("Found unexpected substring '" + substring + "' in " + name + ": " + output);
+            }
+
             return this; // unreachable
         }
 
