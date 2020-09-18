@@ -90,4 +90,23 @@ public interface IInstance extends IIsolatedExecutor
 
     void forceCompact(String keyspace, String table);
 
+    List<Throwable> getUncaughtExceptions();
+
+    default boolean getLogsEnabled()
+    {
+        try
+        {
+            logs();
+            return true;
+        }
+        catch (UnsupportedOperationException e)
+        {
+            return false;
+        }
+    }
+
+    default LogAction logs()
+    {
+        throw new UnsupportedOperationException();
+    }
 }
