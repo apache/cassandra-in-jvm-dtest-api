@@ -36,13 +36,22 @@ public class NodeToolResult
     private final int rc;
     private final List<Notification> notifications;
     private final Throwable error;
+    private final String stdout;
+    private final String stderr;
 
     public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error)
+    {
+        this(commandAndArgs, rc, notifications, error, null, null);
+    }
+
+    public NodeToolResult(String[] commandAndArgs, int rc, List<Notification> notifications, Throwable error, String stdout, String stderr)
     {
         this.commandAndArgs = commandAndArgs;
         this.rc = rc;
         this.notifications = notifications;
         this.error = error;
+        this.stdout = stdout;
+        this.stderr = stderr;
     }
 
     public String[] getCommandAndArgs()
@@ -63,6 +72,16 @@ public class NodeToolResult
     public Throwable getError()
     {
         return error;
+    }
+
+    public String getStdout()
+    {
+        return stdout;
+    }
+
+    public String getStderr()
+    {
+        return stderr;
     }
 
     public Asserts asserts()
@@ -131,6 +150,51 @@ public class NodeToolResult
                 }
             }
             fail("Unable to locate message '" + msg + "' in notifications: " + NodeToolResult.toString(notifications));
+            return this; // unreachable
+        }
+
+        public Asserts stdoutContains(String substring)
+        {
+            return assertConsoleOutput(substring, true, true);
+        }
+
+        public Asserts stderrContains(String substring)
+        {
+            return assertConsoleOutput(substring, false, true);
+        }
+
+        public Asserts stdoutNotContains(String substring)
+        {
+            return assertConsoleOutput(substring, true, false);
+        }
+
+        public Asserts stderrNotContains(String substring)
+        {
+            return assertConsoleOutput(substring, false, false);
+        }
+
+        private Asserts assertConsoleOutput(String substring, boolean isStdout, boolean assertContains)
+        {
+            String name = isStdout ? "stdout" : "stderr";
+            String output = isStdout ? stdout : stderr;
+            AssertUtils.assertNotNull(name + " not defined", output);
+            if (assertContains)
+            {
+                if (output.contains(substring))
+                {
+                    return this;
+                }
+                fail("Unable to locate substring '" + substring + "' in " + name + ": " + output);
+            }
+            else
+            {
+                if (!output.contains(substring))
+                {
+                    return this;
+                }
+                fail("Found unexpected substring '" + substring + "' in " + name + ": " + output);
+            }
+
             return this; // unreachable
         }
 
