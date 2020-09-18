@@ -90,5 +90,4 @@ public interface IInstance extends IIsolatedExecutor
 
     void forceCompact(String keyspace, String table);
 
-    List<Throwable> getUncaughtExceptions();
 }
