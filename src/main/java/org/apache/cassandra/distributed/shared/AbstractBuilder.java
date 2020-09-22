@@ -292,7 +292,10 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
             }
             else if (nodeIdTopology.size() > nodeCount)
             {
-                System.out.printf("nodeIdTopology configured for %d nodes while nodeCount is %d%n", nodeIdTopology.size(), nodeCount);
+                if (nodeCount == 0)
+                    nodeCount = nodeIdTopology.size();
+                else
+                    System.out.printf("nodeIdTopology configured for %d nodes while nodeCount is %d%n", nodeIdTopology.size(), nodeCount);
             }
         }
         else
