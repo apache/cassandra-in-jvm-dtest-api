@@ -1,3 +1,13 @@
+# 0.0.5
+
+CASSANDRA-16109: If user has not set nodeCount, use the node id topology size
+CASSANDRA-16057: Update in-jvm dtest to expose stdout and stderr for nodetool
+CASSANDRA-16120: Add ability for jvm-dtest to grep instance logs
+CASSANDRA-16101: Add method to ignore uncaught throwables
+CASSANDRA-16109: Collect dc/rack information and validate when building
+CASSANDRA-15386: Default to 3 datadirs in in-jvm dtests
+CASSANDRA-16101: Add method to fetch uncaught exceptions
+
 # 0.0.4
 
 CASSANDRA-15920: Make SimpleQueryResult a container for client warnings, and expose those warnings via QueryResult
