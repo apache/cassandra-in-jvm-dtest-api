@@ -86,6 +86,8 @@ public interface IInstance extends IIsolatedExecutor
 
     void setMessagingVersion(InetSocketAddress addressAndPort, int version);
 
+    String getReleaseVersionString();
+
     void flush(String keyspace);
 
     void forceCompact(String keyspace, String table);
