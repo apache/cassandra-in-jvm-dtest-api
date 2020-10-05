@@ -1,3 +1,7 @@
+# 0.0.6
+
+CASSANDRA-16148: Add IInstance#getReleaseVersionString
+
 # 0.0.5
 
 CASSANDRA-16109: If user has not set nodeCount, use the node id topology size
