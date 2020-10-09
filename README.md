@@ -11,7 +11,16 @@ mvn deploy
 
 # Releasing
 
-1. Prepare the release:
+1. Switch to `release` branch. This is useful maven release plugin pushes the current branch. Since we're voting
+on the release, in cases when release is declined for some reason, we have to clean up history and prepare a new
+release. Doing it through `release` branch makes it a bit easier:
+
+```
+git branch -D release
+git checkout -b release
+```
+
+2. Prepare the release:
 
 ```
 mvn release:clean
@@ -21,9 +30,9 @@ mvn -DreleaseVersion=$CURRENT -Dtag=$CURRENT -DdevelopmentVersion=$NEXT_DEV-SNAP
 mvn release:perform
 ```
 
-2. Close staging repository: https://repository.apache.org/#stagingRepositories
+3. Close staging repository: https://repository.apache.org/#stagingRepositories
 
-3. Issue a vote on developers mailing list. Add your GPG key signature, release SHA, and staged artifacts to release information.
+4. Issue a vote on developers mailing list. Add your GPG key signature, release SHA, and staged artifacts to release information.
 
 ## Additional resources:
 
