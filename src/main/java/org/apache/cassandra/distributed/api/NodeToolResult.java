@@ -202,6 +202,10 @@ public class NodeToolResult
         {
             StringBuilder sb = new StringBuilder();
             sb.append("nodetool command ").append(Arrays.toString(commandAndArgs)).append(" ").append(message).append("\n");
+            if (stdout != null)
+                sb.append("stdout:\n").append(stdout).append("\n");
+            if (stderr != null)
+                sb.append("stderr:\n").append(stderr).append("\n");
             sb.append("Notifications:\n");
             for (Notification n : notifications)
                 sb.append(NodeToolResult.toString(n)).append("\n");
