@@ -18,11 +18,13 @@
 
 package org.apache.cassandra.distributed.api;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 public class NodeToolOutputTest
@@ -67,8 +69,52 @@ public class NodeToolOutputTest
         assertThat(exception.getMessage()).contains("Found unexpected substring");
     }
 
+    @Test
+    public void testFailContainsLogs()
+    {
+        for (int rc : Arrays.asList(0, 42))
+        {
+            assertThatThrownBy(() -> fail(create(rc, null, null)))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageNotContaining("stdout:")
+                    .hasMessageNotContaining("stderr:");
+
+            assertThatThrownBy(() -> fail(create(rc, "this is stdout", null)))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("stdout:\nthis is stdout")
+                    .hasMessageNotContaining("stderr:");
+
+            assertThatThrownBy(() -> fail(create(rc, null, "this is stderr")))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageNotContaining("stdout:")
+                    .hasMessageContaining("stderr:\nthis is stderr");
+
+            assertThatThrownBy(() -> fail(create(rc, "this is stdout", "this is stderr")))
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageContaining("stdout:\nthis is stdout")
+                    .hasMessageContaining("stderr:\nthis is stderr");
+        }
+    }
+
+    private static void fail(NodeToolResult result)
+    {
+        if (result.getRc() == 0)
+        {
+            result.asserts().failure();
+        }
+        else
+        {
+            result.asserts().success();
+        }
+    }
+
     private NodeToolResult create(String stdout, String stderr)
     {
-        return new NodeToolResult(null, 0, Collections.emptyList(), null, stdout, stderr);
+        return create(0, stdout, stderr);
+    }
+
+    private NodeToolResult create(int rc, String stdout, String stderr)
+    {
+        return new NodeToolResult(null, rc, Collections.emptyList(), null, stdout, stderr);
     }
 }
