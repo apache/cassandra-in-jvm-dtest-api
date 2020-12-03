@@ -1,3 +1,8 @@
+# 0.0.7
+
+CASSANDRA-16136: Add Metrics to instance API
+CASSANDRA-16272: Nodetool assert apis do not include the new stdout and stderr in the failure message
+
 # 0.0.6
 
 CASSANDRA-16148: Add IInstance#getReleaseVersionString
