@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import org.apache.cassandra.distributed.shared.Metrics;
+
 // The cross-version API requires that an Instance has a constructor signature of (IInstanceConfig, ClassLoader)
 public interface IInstance extends IIsolatedExecutor
 {
@@ -54,6 +56,8 @@ public interface IInstance extends IIsolatedExecutor
     Future<Void> shutdown(boolean graceful);
 
     int liveMemberCount();
+
+    Metrics metrics();
 
     NodeToolResult nodetoolResult(boolean withNotifications, String... commandAndArgs);
 
