@@ -20,6 +20,8 @@ package org.apache.cassandra.distributed.api;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -41,17 +43,33 @@ public interface IIsolatedExecutor
 {
     interface CallableNoExcept<O> extends Callable<O> { O call(); }
 
-    interface SerializableCallable<O> extends CallableNoExcept<O>, Serializable {}
     interface SerializableRunnable extends Runnable, Serializable {}
-    interface SerializableConsumer<O> extends Consumer<O>, Serializable {}
+
     interface SerializableSupplier<O> extends Supplier<O>, Serializable {}
+    interface SerializableCallable<O> extends CallableNoExcept<O>, Serializable {}
+
+    interface SerializableConsumer<O> extends Consumer<O>, Serializable {}
     interface SerializableBiConsumer<I1, I2> extends BiConsumer<I1, I2>, Serializable {}
+    interface TriConsumer<I1, I2, I3> { void accept(I1 i1, I2 i2, I3 i3); }
+    interface SerializableTriConsumer<I1, I2, I3> extends TriConsumer<I1, I2, I3>, Serializable { }
+
+    interface DynamicFunction<IO>
+    {
+        <IO2 extends IO> IO2 apply(IO2 i);
+    }
+    interface SerializableDynamicFunction<IO> extends DynamicFunction<IO>, Serializable {}
+
     interface SerializableFunction<I, O> extends Function<I, O>, Serializable {}
     interface SerializableBiFunction<I1, I2, O> extends BiFunction<I1, I2, O>, Serializable {}
-
     interface TriFunction<I1, I2, I3, O> { O apply(I1 i1, I2 i2, I3 i3); }
-
     interface SerializableTriFunction<I1, I2, I3, O> extends Serializable, TriFunction<I1, I2, I3, O> {}
+    interface QuadFunction<I1, I2, I3, I4, O> { O apply(I1 i1, I2 i2, I3 i3, I4 i4); }
+    interface SerializableQuadFunction<I1, I2, I3, I4, O> extends Serializable, QuadFunction<I1, I2, I3, I4, O> {}
+    interface QuintFunction<I1, I2, I3, I4, I5, O> { O apply(I1 i1, I2 i2, I3 i3, I4 i4, I5 i5); }
+    interface SerializableQuintFunction<I1, I2, I3, I4, I5, O> extends Serializable, QuintFunction<I1, I2, I3, I4, I5, O> {}
+
+    default IIsolatedExecutor with(ExecutorService executor) { throw new UnsupportedOperationException(); }
+    default Executor executor() { throw new UnsupportedOperationException(); }
 
     Future<Void> shutdown();
 
@@ -96,6 +114,16 @@ public interface IIsolatedExecutor
     <I1, I2> BiConsumer<I1, I2> sync(BiConsumer<I1, I2> consumer);
 
     /**
+     * Convert the execution to one performed synchronously on the IsolatedExecutor
+     */
+    <I1, I2, I3> TriFunction<I1, I2, I3, Future<?>> async(TriConsumer<I1, I2, I3> consumer);
+
+    /**
+     * Convert the execution to one performed synchronously on the IsolatedExecutor
+     */
+    <I1, I2, I3> TriConsumer<I1, I2, I3> sync(TriConsumer<I1, I2, I3> consumer);
+
+    /**
      * Convert the execution to one performed asynchronously on the IsolatedExecutor, returning a Future of the execution result
      */
     <I, O> Function<I, Future<O>> async(Function<I, O> f);
@@ -124,4 +152,24 @@ public interface IIsolatedExecutor
      * Convert the execution to one performed synchronously on the IsolatedExecutor
      */
     <I1, I2, I3, O> TriFunction<I1, I2, I3, O> sync(TriFunction<I1, I2, I3, O> f);
+
+    /**
+     * Convert the execution to one performed asynchronously on the IsolatedExecutor, returning a Future of the execution result
+     */
+    <I1, I2, I3, I4, O> QuadFunction<I1, I2, I3, I4, Future<O>> async(QuadFunction<I1, I2, I3, I4, O> f);
+
+    /**
+     * Convert the execution to one performed synchronously on the IsolatedExecutor
+     */
+    <I1, I2, I3, I4, O> QuadFunction<I1, I2, I3, I4, O> sync(QuadFunction<I1, I2, I3, I4, O> f);
+
+    /**
+     * Convert the execution to one performed asynchronously on the IsolatedExecutor, returning a Future of the execution result
+     */
+    <I1, I2, I3, I4, I5, O> QuintFunction<I1, I2, I3, I4, I5, Future<O>> async(QuintFunction<I1, I2, I3, I4, I5, O> f);
+
+    /**
+     * Convert the execution to one performed synchronously on the IsolatedExecutor
+     */
+    <I1, I2, I3, I4, I5, O> QuintFunction<I1, I2, I3, I4, I5, O> sync(QuintFunction<I1, I2, I3, I4, I5, O> f);
 }

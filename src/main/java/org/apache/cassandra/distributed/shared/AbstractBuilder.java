@@ -18,14 +18,13 @@
 
 package org.apache.cassandra.distributed.shared;
 
-import org.apache.cassandra.distributed.api.ICluster;
-import org.apache.cassandra.distributed.api.IInstance;
-import org.apache.cassandra.distributed.api.IInstanceConfig;
-import org.apache.cassandra.distributed.api.TokenSupplier;
+import org.apache.cassandra.distributed.api.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -51,12 +52,15 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private int subnet;
     private Map<Integer, NetworkTopology.DcAndRack> nodeIdTopology;
     private TokenSupplier tokenSupplier;
-    private File root;
+    private Path rootPath;
+    private File rootFile;
     private Versions.Version version;
     private Consumer<IInstanceConfig> configUpdater;
     private ClassLoader sharedClassLoader = Thread.currentThread().getContextClassLoader();
+    private Predicate<String> sharedClasses = InstanceClassLoader.getDefaultLoadSharedFilter();
     private int broadcastPort = 7012;
-    private BiConsumer<ClassLoader, Integer> instanceInitializer = (cl, id) -> {};
+    private IInstanceInitializer instanceInitializer = (cl, tg, num, gen) -> {};
+    private IClassTransformer classTransformer;
     private int datadirCount = 3;
     private final List<Rack> racks = new ArrayList<>();
     private boolean finalised;
@@ -83,7 +87,11 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     }
 
     public File getRoot() {
-        return root;
+        return rootFile != null ? rootFile : rootPath.toFile();
+    }
+
+    public Path getRootPath() {
+        return rootPath != null ? rootPath : rootFile.toPath();
     }
 
     public Versions.Version getVersion() {
@@ -98,13 +106,28 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return sharedClassLoader;
     }
 
+    public Predicate<String> getSharedClasses() {
+        return sharedClasses;
+    }
+
     public int getBroadcastPort() {
         return broadcastPort;
     }
 
+    @Deprecated
     public BiConsumer<ClassLoader, Integer> getInstanceInitializer()
     {
+        return instanceInitializer::initialise;
+    }
+
+    public IInstanceInitializer getInstanceInitializer2()
+    {
         return instanceInitializer;
+    }
+
+    public IClassTransformer getClassTransformer()
+    {
+        return classTransformer;
     }
 
     public int getDatadirCount()
@@ -122,10 +145,11 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public C createWithoutStarting() throws IOException
     {
         finaliseBuilder();
-        if (root == null)
-            root = Files.createTempDirectory("dtests").toFile();
+        if (rootFile == null && rootPath == null)
+            rootPath = Files.createTempDirectory("dtests");
 
-        root.mkdirs();
+        if (rootFile != null) rootFile.mkdirs();
+        else try { Files.createDirectories(rootPath); } catch (FileAlreadyExistsException ignore) { }
 
         // TODO: make token allocation strategy configurable
         if (tokenSupplier == null)
@@ -137,6 +161,12 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public B withSharedClassLoader(ClassLoader sharedClassLoader)
     {
         this.sharedClassLoader = Objects.requireNonNull(sharedClassLoader, "sharedClassLoader");
+        return (B) this;
+    }
+
+    public B withSharedClasses(Predicate<String> sharedClasses)
+    {
+        this.sharedClasses = Objects.requireNonNull(sharedClasses, "sharedClasses");
         return (B) this;
     }
 
@@ -244,7 +274,13 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
 
     public B withRoot(File root)
     {
-        this.root = root;
+        this.rootFile = root;
+        return (B) this;
+    }
+
+    public B withRoot(Path root)
+    {
+        this.rootPath = root;
         return (B) this;
     }
 
@@ -260,9 +296,39 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return (B) this;
     }
 
+    public B appendConfig(Consumer<IInstanceConfig> updater)
+    {
+        Consumer<IInstanceConfig> prev = configUpdater;
+        Consumer<IInstanceConfig> next = prev == null ? updater : config -> { prev.accept(config); updater.accept(config); };
+        this.configUpdater = next;
+        return (B) this;
+    }
+
     public B withInstanceInitializer(BiConsumer<ClassLoader, Integer> instanceInitializer)
     {
+        this.instanceInitializer = new IInstanceInitializer() {
+            @Override
+            public void initialise(ClassLoader classLoader, ThreadGroup threadGroup, int num, int generation) {
+                instanceInitializer.accept(classLoader, num);
+            }
+
+            @Override
+            public void initialise(ClassLoader classLoader, int num) {
+                instanceInitializer.accept(classLoader, num);
+            }
+        };
+        return (B) this;
+    }
+
+    public B withInstanceInitializer(IInstanceInitializer instanceInitializer)
+    {
         this.instanceInitializer = instanceInitializer;
+        return (B) this;
+    }
+
+    public B withClassTransformer(IClassTransformer classTransformer)
+    {
+        this.classTransformer = classTransformer;
         return (B) this;
     }
 
@@ -279,6 +345,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
             return;
         finalised = true;
 
+        boolean log = logTopology();
         if (!racks.isEmpty())
         {
             setRacks();
@@ -287,7 +354,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         {
             if (nodeIdTopology.size() < nodeCount)
             {
-                System.out.println("Adjusting node count since nodeIdTopology contains fewer nodes");
+                if (log) System.out.println("Adjusting node count since nodeIdTopology contains fewer nodes");
                 nodeCount = nodeIdTopology.size();
             }
             else if (nodeIdTopology.size() > nodeCount)
@@ -295,7 +362,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
                 if (nodeCount == 0)
                     nodeCount = nodeIdTopology.size();
                 else
-                    System.out.printf("nodeIdTopology configured for %d nodes while nodeCount is %d%n", nodeIdTopology.size(), nodeCount);
+                if (log) System.out.printf("nodeIdTopology configured for %d nodes while nodeCount is %d%n", nodeIdTopology.size(), nodeCount);
             }
         }
         else
@@ -308,13 +375,13 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         if (nodeCount <= 0)
             throw new IllegalStateException("Cluster must have at least one node");
 
-        System.out.println("Node id topology:");
+        if (log) System.out.println("Node id topology:");
         for (int i = 1; i <= nodeIdTopology.size(); i++)
         {
             NetworkTopology.DcAndRack dcAndRack = nodeIdTopology.get(i);
-            System.out.printf("node %d: dc = %s, rack = %s%n", i, dcAndRack.dc, dcAndRack.rack);
+            if (log) System.out.printf("node %d: dc = %s, rack = %s%n", i, dcAndRack.dc, dcAndRack.rack);
         }
-        System.out.printf("Configured node count: %d, nodeIdTopology size: %d%n", nodeCount, nodeIdTopology.size());
+        if (log) System.out.printf("Configured node count: %d, nodeIdTopology size: %d%n", nodeCount, nodeIdTopology.size());
     }
 
     private void setRacks()
@@ -359,7 +426,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
             assert nodeIdTopology.size() > nodeCount : "withRacks should only ever increase the node count";
             if (nodeCount == 0)
                 nodeCount =  nodeIdTopology.size();
-            else
+            else if (logTopology())
                 System.out.printf("Network topology of %s requires more nodes, only starting %s out of %s configured nodes%n", nodeIdTopology, nodeCount, nodeIdTopology.size());
         }
     }
@@ -386,6 +453,11 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
             this.rackName = rackName;
             this.rackNodeCount = rackNodeCount;
         }
+    }
+
+    private static boolean logTopology()
+    {
+        return !System.getProperty("cassandra.dtest.api.log.topology", "").equals("false");
     }
 }
 

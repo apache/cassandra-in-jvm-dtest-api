@@ -61,6 +61,8 @@ public interface IInstanceConfig
 
     IInstanceConfig set(String fieldName, Object value);
 
+    default IInstanceConfig forceSet(String fieldName, Object value) { throw new UnsupportedOperationException(); }
+
     Object get(String fieldName);
 
     String getString(String fieldName);
@@ -69,7 +71,9 @@ public interface IInstanceConfig
 
     boolean has(Feature featureFlag);
 
-    public IInstanceConfig forVersion(Semver series);
+    IInstanceConfig forVersion(Semver series);
+
+    Map<String, Object> getParams();
 
     public static class ParameterizedClass
     {

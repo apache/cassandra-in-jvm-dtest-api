@@ -56,6 +56,15 @@ public interface ICluster<I extends IInstance> extends AutoCloseable
 
     IMessageFilters filters();
 
+    default void setMessageSink(IMessageSink messageSink) { throw new UnsupportedOperationException(); }
+
+    default void deliverMessage(InetSocketAddress to, IMessage msg)
+    {
+        IInstance toInstance = get(to);
+        if (toInstance != null)
+            toInstance.receiveMessage(msg);
+    }
+
     /**
      * dynamically sets the current uncaught exceptions filter
      *
