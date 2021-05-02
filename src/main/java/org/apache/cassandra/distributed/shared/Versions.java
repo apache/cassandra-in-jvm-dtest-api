@@ -69,7 +69,8 @@ public class Versions
         v22("2\\.2\\.([0-9]+)"),
         v30("3\\.0\\.([0-9]+)"),
         v3X("3\\.([1-9]|1[01])(\\.([0-9]+))?"),
-        v4("4\\.([0-9]+)");
+        v40("4\\.0(?:\\.|-alpha|-beta|-rc)([0-9]+)(\\.([0-9]+))?"),
+        v4X("4\\.([1-9][0-9]*)(\\.([0-9]+))?");
         final Pattern pattern;
 
         Major(String verify)
@@ -92,7 +93,9 @@ public class Versions
                         return v30;
                     return v3X;
                 case '4':
-                    return v4;
+                    if (version.startsWith("4.0"))
+                        return v40;
+                    return v4X;
                 default:
                     throw new IllegalArgumentException(version);
             }
@@ -108,7 +111,7 @@ public class Versions
         int compare(String a, String b)
         {
             Matcher ma = pattern.matcher(a);
-            Matcher mb = pattern.matcher(a);
+            Matcher mb = pattern.matcher(b);
             if (!ma.matches()) throw new IllegalArgumentException(a);
             if (!mb.matches()) throw new IllegalArgumentException(b);
             int result = Integer.compare(Integer.parseInt(ma.group(1)), Integer.parseInt(mb.group(1)));
@@ -116,6 +119,7 @@ public class Versions
             {
                 if (ma.group(3) != null && mb.group(3) != null)
                 {
+                    // XXX likely wrong for alpha|beta|rc versions
                     result = Integer.compare(Integer.parseInt(ma.group(3)), Integer.parseInt(mb.group(3)));
                 }
                 else
