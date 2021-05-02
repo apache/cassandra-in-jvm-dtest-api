@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Versions
+public final class Versions
 {
     private static final Logger logger = LoggerFactory.getLogger(Versions.class);
 
@@ -69,7 +69,8 @@ public class Versions
         v22("2\\.2\\.([0-9]+)"),
         v30("3\\.0\\.([0-9]+)"),
         v3X("3\\.([1-9]|1[01])(\\.([0-9]+))?"),
-        v4("4\\.([0-9]+)");
+        v40("4\\.0(?:\\.|-alpha|-beta|-rc)([0-9]+)(\\.([0-9]+))?"),
+        v4X("4\\.([1-9][0-9]*)(\\.([0-9]+))?");
         final Pattern pattern;
 
         Major(String verify)
@@ -92,7 +93,9 @@ public class Versions
                         return v30;
                     return v3X;
                 case '4':
-                    return v4;
+                    if (version.startsWith("4.0"))
+                        return v40;
+                    return v4X;
                 default:
                     throw new IllegalArgumentException(version);
             }
@@ -108,7 +111,7 @@ public class Versions
         int compare(String a, String b)
         {
             Matcher ma = pattern.matcher(a);
-            Matcher mb = pattern.matcher(a);
+            Matcher mb = pattern.matcher(b);
             if (!ma.matches()) throw new IllegalArgumentException(a);
             if (!mb.matches()) throw new IllegalArgumentException(b);
             int result = Integer.compare(Integer.parseInt(ma.group(1)), Integer.parseInt(mb.group(1)));
@@ -116,6 +119,7 @@ public class Versions
             {
                 if (ma.group(3) != null && mb.group(3) != null)
                 {
+                    // XXX likely wrong for alpha|beta|rc versions
                     result = Integer.compare(Integer.parseInt(ma.group(3)), Integer.parseInt(mb.group(3)));
                 }
                 else
@@ -149,7 +153,7 @@ public class Versions
 
     private final Map<Major, List<Version>> versions;
 
-    public Versions(Map<Major, List<Version>> versions)
+    private Versions(Map<Major, List<Version>> versions)
     {
         this.versions = versions;
     }
@@ -173,19 +177,22 @@ public class Versions
         final String dtestJarDirectory = System.getProperty(PROPERTY_PREFIX + "test.dtest_jar_path", "build");
         final File sourceDirectory = new File(dtestJarDirectory);
         logger.info("Looking for dtest jars in " + sourceDirectory.getAbsolutePath());
-        final Pattern pattern = Pattern.compile("dtest-(?<fullversion>(\\d+)\\.(\\d+)(\\.\\d+)?(\\.\\d+)?)([~\\-]\\w[.\\w]*(?:\\-\\w[.\\w]*)*)?(\\+[.\\w]+)?\\.jar");
+        final Pattern pattern = Pattern.compile("dtest-(?<fullversion>(\\d+)\\.(\\d+)((\\.|-alpha|-beta|-rc)([0-9]+))?(\\.\\d+)?)([~\\-]\\w[.\\w]*(?:\\-\\w[.\\w]*)*)?(\\+[.\\w]+)?\\.jar");
         final Map<Major, List<Version>> versions = new HashMap<>();
         for (Major major : Major.values())
             versions.put(major, new ArrayList<>());
 
-        for (File file : sourceDirectory.listFiles())
+        if (sourceDirectory.exists())
         {
-            Matcher m = pattern.matcher(file.getName());
-            if (!m.matches())
-                continue;
-            String version = m.group(1);
-            Major major = Major.fromFull(version);
-            versions.get(major).add(new Version(major, version, new URL[]{ toURL(file) }));
+            for (File file : sourceDirectory.listFiles())
+            {
+                Matcher m = pattern.matcher(file.getName());
+                if (!m.matches())
+                    continue;
+                String version = m.group(1);
+                Major major = Major.fromFull(version);
+                versions.get(major).add(new Version(major, version, new URL[]{ toURL(file) }));
+            }
         }
 
         for (Map.Entry<Major, List<Version>> e : versions.entrySet())
@@ -199,7 +206,7 @@ public class Versions
         return new Versions(versions);
     }
 
-    public static URL toURL(File file)
+    private static URL toURL(File file)
     {
         try
         {

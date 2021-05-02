@@ -79,3 +79,4 @@ doc/source/tools/nodetool
 
 # Python virtual environment
 venv/
+/nbproject/
