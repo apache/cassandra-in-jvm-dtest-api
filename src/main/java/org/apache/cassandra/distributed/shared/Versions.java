@@ -24,7 +24,6 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.vdurmont.semver4j.Semver;
+import com.vdurmont.semver4j.Semver.SemverType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,112 +65,64 @@ public final class Versions
         return urls;
     }
 
-    public enum Major
+    public static final class Version implements Comparable<Version>
     {
-        v22("2\\.2\\.([0-9]+)"),
-        v30("3\\.0\\.([0-9]+)"),
-        v3X("3\\.([1-9]|1[01])(\\.([0-9]+))?"),
-        v40("4\\.0(?:\\.|-alpha|-beta|-rc)([0-9]+)(\\.([0-9]+))?"),
-        v4X("4\\.([1-9][0-9]*)(\\.([0-9]+))?");
-        final Pattern pattern;
-
-        Major(String verify)
-        {
-            this.pattern = Pattern.compile(verify);
-        }
-
-        static Major fromFull(String version)
-        {
-            if (version.isEmpty())
-                throw new IllegalArgumentException(version);
-            switch (version.charAt(0))
-            {
-                case '2':
-                    if (version.startsWith("2.2"))
-                        return v22;
-                    throw new IllegalArgumentException(version);
-                case '3':
-                    if (version.startsWith("3.0"))
-                        return v30;
-                    return v3X;
-                case '4':
-                    if (version.startsWith("4.0"))
-                        return v40;
-                    return v4X;
-                default:
-                    throw new IllegalArgumentException(version);
-            }
-        }
-
-        // verify that the version string is valid for this major version
-        boolean verify(String version)
-        {
-            return pattern.matcher(version).matches();
-        }
-
-        // sort two strings of the same major version as this enum instance
-        int compare(String a, String b)
-        {
-            Matcher ma = pattern.matcher(a);
-            Matcher mb = pattern.matcher(b);
-            if (!ma.matches()) throw new IllegalArgumentException(a);
-            if (!mb.matches()) throw new IllegalArgumentException(b);
-            int result = Integer.compare(Integer.parseInt(ma.group(1)), Integer.parseInt(mb.group(1)));
-            if (result == 0 && this == v3X && (ma.group(3) != null || mb.group(3) != null))
-            {
-                if (ma.group(3) != null && mb.group(3) != null)
-                {
-                    // XXX likely wrong for alpha|beta|rc versions
-                    result = Integer.compare(Integer.parseInt(ma.group(3)), Integer.parseInt(mb.group(3)));
-                }
-                else
-                {
-                    result = ma.group(3) != null ? 1 : -1;
-                }
-            }
-            // sort descending
-            return -result;
-        }
-    }
-
-    public static class Version
-    {
-        public final Major major;
-        public final String version;
+        public final Semver version;
         public final URL[] classpath;
 
         public Version(String version, URL[] classpath)
         {
-            this(Major.fromFull(version), version, classpath);
+            this(new Semver(version, SemverType.LOOSE), classpath);
         }
 
-        public Version(Major major, String version, URL[] classpath)
+        public Version(Semver version, URL[] classpath)
         {
-            this.major = major;
             this.version = version;
             this.classpath = classpath;
         }
+
+        @Override
+        public int compareTo(Version o) {
+            return version.compareTo(o.version);
+        }
     }
 
-    private final Map<Major, List<Version>> versions;
+    private final Map<Semver, List<Version>> versions;
 
-    private Versions(Map<Major, List<Version>> versions)
+    private Versions(Map<Semver, List<Version>> versions)
     {
         this.versions = versions;
     }
 
     public Version get(String full)
     {
-        return versions.get(Major.fromFull(full))
-                       .stream()
-                       .filter(v -> full.equals(v.version))
-                       .findFirst()
-                       .orElseThrow(() -> new RuntimeException("No version " + full + " found"));
+        return get(new Semver(full, SemverType.LOOSE));
     }
 
-    public Version getLatest(Major major)
+    public Version get(Semver version)
     {
-        return versions.get(major).stream().findFirst().orElseThrow(() -> new RuntimeException("No " + major + " versions found"));
+        return versions.get(first(version))
+                       .stream()
+                       .filter(v -> version.equals(v.version))
+                       .findFirst()
+                       .orElseThrow(() -> new RuntimeException("No version " + version.getOriginalValue() + " found"));
+    }
+
+    private static Semver first(Semver version)
+    {
+        int major = version.getMajor();
+        int minor = version.getMinor();
+        if (major < 2 || (major < 3 && minor < 1))
+            throw new IllegalArgumentException(version.getOriginalValue());
+        return new Semver(major + "." + minor, SemverType.LOOSE);
+    }
+
+    public Version getLatest(Semver version)
+    {
+        return versions.get(first(version))
+											  .stream()
+												.findFirst()
+											  .orElseThrow(() -> new RuntimeException("No " + version + " versions found"));
     }
 
     public static Versions find()
@@ -178,9 +131,7 @@ public final class Versions
         final File sourceDirectory = new File(dtestJarDirectory);
         logger.info("Looking for dtest jars in " + sourceDirectory.getAbsolutePath());
         final Pattern pattern = Pattern.compile("dtest-(?<fullversion>(\\d+)\\.(\\d+)((\\.|-alpha|-beta|-rc)([0-9]+))?(\\.\\d+)?)([~\\-]\\w[.\\w]*(?:\\-\\w[.\\w]*)*)?(\\+[.\\w]+)?\\.jar");
-        final Map<Major, List<Version>> versions = new HashMap<>();
-        for (Major major : Major.values())
-            versions.put(major, new ArrayList<>());
+        final Map<Semver, List<Version>> versions = new HashMap<>();
 
         if (sourceDirectory.exists())
         {
@@ -189,18 +140,19 @@ public final class Versions
                 Matcher m = pattern.matcher(file.getName());
                 if (!m.matches())
                     continue;
-                String version = m.group(1);
-                Major major = Major.fromFull(version);
-                versions.get(major).add(new Version(major, version, new URL[]{ toURL(file) }));
+                Semver version = new Semver(m.group(1), SemverType.LOOSE);
+                Semver series = first(version);
+                versions.putIfAbsent(series, new ArrayList<>());
+                versions.get(series).add(new Version(version, new URL[]{ toURL(file) }));
             }
         }
 
-        for (Map.Entry<Major, List<Version>> e : versions.entrySet())
+        for (Map.Entry<Semver, List<Version>> e : versions.entrySet())
         {
             if (e.getValue().isEmpty())
                 continue;
-            Collections.sort(e.getValue(), Comparator.comparing(v -> v.version, e.getKey()::compare));
-            System.out.println("Found " + e.getValue().stream().map(v -> v.version).collect(Collectors.joining(", ")));
+            Collections.sort(e.getValue(), Collections.reverseOrder());
+            System.out.println("Found " + e.getValue().stream().map(v -> v.version.getOriginalValue()).collect(Collectors.joining(", ")));
         }
 
         return new Versions(versions);

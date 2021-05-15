@@ -25,8 +25,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.vdurmont.semver4j.Semver;
+
 import org.apache.cassandra.distributed.shared.NetworkTopology;
-import org.apache.cassandra.distributed.shared.Versions;
 
 public interface IInstanceConfig
 {
@@ -68,7 +69,7 @@ public interface IInstanceConfig
 
     boolean has(Feature featureFlag);
 
-    public IInstanceConfig forVersion(Versions.Major major);
+    public IInstanceConfig forVersion(Semver series);
 
     public static class ParameterizedClass
     {

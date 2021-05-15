@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.vdurmont.semver4j.Semver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -75,7 +76,8 @@ public class VersionsTest
     @Test
     public void testGetLatest()
     {
-        Versions.find().getLatest(Versions.Major.v22);
+        Versions.find().getLatest(new Semver("2.2.0"));
+        Versions.find().getLatest(new Semver("2.2", Semver.SemverType.LOOSE));
     }
 
     @Test
