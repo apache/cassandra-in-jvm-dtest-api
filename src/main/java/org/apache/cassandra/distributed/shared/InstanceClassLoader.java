@@ -30,6 +30,7 @@ public class InstanceClassLoader extends URLClassLoader
               name ->
               name.startsWith("org.apache.cassandra.distributed.api.")
               || name.startsWith("org.apache.cassandra.distributed.shared.")
+              || name.startsWith("com.vdurmont.semver4j.")
               || name.startsWith("sun.")
               || name.startsWith("oracle.")
               || name.startsWith("com.intellij.")
