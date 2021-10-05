@@ -18,11 +18,20 @@
 
 package org.apache.cassandra.distributed.shared;
 
+import org.apache.cassandra.distributed.api.IClassTransformer;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
+import java.security.CodeSigner;
+import java.security.CodeSource;
 import java.util.Arrays;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.jar.Manifest;
 
 public class InstanceClassLoader extends URLClassLoader
 {
@@ -48,13 +57,24 @@ public class InstanceClassLoader extends URLClassLoader
     private final int id;
     private final ClassLoader sharedClassLoader;
     private final Predicate<String> loadShared;
+    private final IClassTransformer transform;
 
     public InstanceClassLoader(int generation, int id, URL[] urls, ClassLoader sharedClassLoader)
     {
         this(generation, id, urls, sharedClassLoader, DEFAULT_SHARED_PACKAGES);
     }
 
+    public InstanceClassLoader(int generation, int id, URL[] urls, ClassLoader sharedClassLoader, IClassTransformer transform)
+    {
+        this(generation, id, urls, sharedClassLoader, DEFAULT_SHARED_PACKAGES, transform);
+    }
+
     public InstanceClassLoader(int generation, int id, URL[] urls, ClassLoader sharedClassLoader, Predicate<String> loadShared)
+    {
+        this(generation, id, urls, sharedClassLoader, loadShared, null);
+    }
+
+    public InstanceClassLoader(int generation, int id, URL[] urls, ClassLoader sharedClassLoader, Predicate<String> loadShared, IClassTransformer transform)
     {
         super(urls, null);
         this.urls = urls;
@@ -62,6 +82,7 @@ public class InstanceClassLoader extends URLClassLoader
         this.generation = generation;
         this.id = id;
         this.loadShared = loadShared == null ? DEFAULT_SHARED_PACKAGES : loadShared;
+        this.transform = transform;
     }
 
     public static Predicate<String> getDefaultLoadSharedFilter()
@@ -111,6 +132,76 @@ public class InstanceClassLoader extends URLClassLoader
     public static boolean wasLoadedByAnInstanceClassLoader(Class<?> clazz)
     {
         return clazz.getClassLoader().getClass().getName().equals(InstanceClassLoader.class.getName());
+    }
+
+    protected Class<?> findClass(String name) throws ClassNotFoundException
+    {
+        if (transform == null)
+            return super.findClass(name);
+
+        String pkg = name.substring(0, name.lastIndexOf('.'));
+        String path = name.replace('.', '/').concat(".class");
+        URL url = getResource(path);
+        if (url == null)
+        {
+            byte[] bytes = transform.transform(name, null);
+            if (bytes == null)
+                throw new ClassNotFoundException(name);
+            if (null == getPackage(pkg))
+                definePackage(pkg, null, null, null, null, null, null, null);
+            return defineClass(name, bytes, 0, bytes.length);
+        }
+        try
+        {
+            URLConnection connection = url.openConnection();
+            CodeSigner[] codeSigners = null;
+            Manifest manifest = null;
+            if (connection instanceof JarURLConnection)
+            {
+                manifest = ((JarURLConnection) connection).getManifest();
+                codeSigners = ((JarURLConnection) connection).getJarEntry().getCodeSigners();
+            }
+            if (null == getPackage(pkg))
+            {
+                try
+                {
+                    if (manifest != null) definePackage(pkg, manifest, url);
+                    else definePackage(pkg, null, null, null, null, null, null, null);
+                }
+                catch (IllegalArgumentException iae)
+                {
+                    if (null == getPackage(pkg))
+                        throw iae;
+                }
+            }
+            try (InputStream in = connection.getInputStream())
+            {
+                byte[] bytes = new byte[in.available()];
+                int cur, total = 0;
+                while (0 <= (cur = in.read(bytes, total, bytes.length - total)))
+                {
+                    total += cur;
+                    if (cur == 0 && total == bytes.length)
+                    {
+                        int next = in.read();
+                        if (next < 0)
+                            break;
+
+                        bytes = Arrays.copyOf(bytes, bytes.length * 2);
+                        bytes[total++] = (byte)next;
+                    }
+                }
+                if (total < bytes.length)
+                    bytes = Arrays.copyOf(bytes, total);
+
+                bytes = transform.transform(name, bytes);
+                return defineClass(name, bytes, 0, bytes.length, new CodeSource(url, codeSigners));
+            }
+        }
+        catch (Throwable t)
+        {
+            throw new ClassNotFoundException(name, t);
+        }
     }
 
     public String toString()

@@ -25,7 +25,6 @@ public interface IMessageFilters
     interface Filter
     {
         Filter off();
-
         Filter on();
     }
 
@@ -93,6 +92,9 @@ public interface IMessageFilters
     }
 
     void reset();
+
+    default boolean hasInbound() { return true; }
+    default boolean hasOutbound() { return true; }
 
     /**
      * Checks if the message should be delivered.  This is expected to run on "inbound", or on the reciever of
