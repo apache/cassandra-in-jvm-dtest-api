@@ -1,3 +1,16 @@
+# 0.0.10
+
+CASSANDRA-17013: CEP-10 Simulator Improvements
+
+# 0.0.9
+
+CASSANDRA-16803: jvm-dtest-upgrade failing MixedModeReadTest.mixedModeReadColumnSubsetDigestCheck, ClassNotFoundException: com.vdurmont.semver4j.Semver
+
+# 0.0.8
+
+CASSANDRA-16649: Update Versions for trunk as 4.1 and new release branch cassandra-4.0
+CASSANDRA-16649: Introduce SemVer4j for version representation, parsing and handling
+
 # 0.0.7
 
 CASSANDRA-16136: Add Metrics to instance API
