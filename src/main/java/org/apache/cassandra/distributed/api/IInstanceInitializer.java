@@ -20,7 +20,7 @@ package org.apache.cassandra.distributed.api;
 
 public interface IInstanceInitializer
 {
-    default void initialise(ClassLoader classLoader, int num) { throw new UnsupportedOperationException(); }
+    default void initialise(ClassLoader classLoader, int num) { initialise(classLoader, null, num, 1); }
     void initialise(ClassLoader classLoader, ThreadGroup threadGroup, int num, int generation);
     default void beforeStartup(IInstance instance) {}
     default void afterStartup(IInstance instance) {}
