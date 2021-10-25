@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.cassandra</groupId>
     <artifactId>dtest-api</artifactId>
-    <version>0.0.10-SNAPSHOT</version>
+    <version>0.0.11-SNAPSHOT</version>
     <name>In JVM Test API</name>
     <description>In JVM Test API</description>
 
