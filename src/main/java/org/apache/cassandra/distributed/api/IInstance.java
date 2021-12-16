@@ -19,7 +19,6 @@
 package org.apache.cassandra.distributed.api;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -51,6 +50,14 @@ public interface IInstance extends IIsolatedExecutor
     void startup();
 
     boolean isShutdown();
+
+    /**
+     * Returns true if we can perform any operation or retrieve information from this instance
+     */
+    default boolean isValid()
+    {
+        return true;
+    }
 
     Future<Void> shutdown();
 
