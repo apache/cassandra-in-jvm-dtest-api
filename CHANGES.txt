@@ -1,3 +1,12 @@
+# 0.0.12
+
+CASSANDRA-17214:Add IInstance.isValid() with default true return value
+
+# 0.0.11
+
+CASSANDRA-17064: Option to start nodes with blank gossip state
+CASSANDRA-17050: fix Upgrade tests failing with UnsupportedOperationException
+
 # 0.0.10
 
 CASSANDRA-17013: CEP-10 Simulator Improvements
