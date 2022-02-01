@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -101,11 +102,14 @@ public final class Versions
 
     public Version get(Semver version)
     {
-        return versions.get(first(version))
-                       .stream()
+        Supplier<RuntimeException> onError = () -> new RuntimeException("No version " + version.getOriginalValue() + " found");
+        List<Version> versions = this.versions.get(first(version));
+        if (versions == null)
+            throw onError.get();
+        return versions.stream()
                        .filter(v -> version.equals(v.version))
                        .findFirst()
-                       .orElseThrow(() -> new RuntimeException("No version " + version.getOriginalValue() + " found"));
+                       .orElseThrow(onError);
     }
 
     private static Semver first(Semver version)

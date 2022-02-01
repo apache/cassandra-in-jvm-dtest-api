@@ -19,6 +19,7 @@ package org.apache.cassandra.distributed.api;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -59,7 +60,7 @@ import java.util.stream.Stream;
  * points to newer data.  If this behavior is not desirable and access is needed between calls, then {@link Row#copy()}
  * should be used; this will clone the {@link Row} and return a new object pointing to the same data.
  */
-public class SimpleQueryResult implements QueryResult
+public class SimpleQueryResult implements QueryResult, Iterable<Row>
 {
     private final String[] names;
     private final Object[][] results;
@@ -108,13 +109,18 @@ public class SimpleQueryResult implements QueryResult
         return new SimpleQueryResult(names, results, filter.and(fn), offset);
     }
 
+    @Override
+    public Iterator<Row> iterator() {
+        return new SimpleQueryResult(names, results, filter, offset);
+    }
+
     /**
      * Reset the cursor to the start of the query result; if the query result has not been iterated, this has no effect.
      */
     public void reset()
     {
         offset = -1;
-        row.setResults(null);
+        row.unsafeSetResults(null);
     }
 
     /**
@@ -133,13 +139,13 @@ public class SimpleQueryResult implements QueryResult
             return false;
         while ((offset += 1) < results.length)
         {
-            row.setResults(results[offset]);
+            row.unsafeSetResults(results[offset]);
             if (filter.test(row))
             {
                 return true;
             }
         }
-        row.setResults(null);
+        row.unsafeSetResults(null);
         return false;
     }
 

@@ -18,17 +18,44 @@
 
 package org.apache.cassandra.distributed.api;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 public interface TokenSupplier
 {
-    long token(int nodeId);
+    Collection<String> tokens(int nodeId);
 
+    @Deprecated
+    default long token(int nodeId)
+    {
+        Collection<String> tokens = tokens(nodeId);
+        assert tokens.size() == 1: "tokens function returned multiple tokens, only expected 1: " + tokens;
+        return Long.parseLong(tokens.stream().findFirst().get());
+    }
+
+    @Deprecated
     static TokenSupplier evenlyDistributedTokens(int numNodes)
     {
-        long increment = (Long.MAX_VALUE / numNodes) * 2;
-        return (int nodeId) -> {
-            assert nodeId <= numNodes : String.format("Can not allocate a token for a node %s, since only %s nodes are allowed by the token allocation strategy",
-                                                      nodeId, numNodes);
-            return Long.MIN_VALUE + 1 + nodeId * increment;
-        };
+        return evenlyDistributedTokens(numNodes, 1);
+    }
+
+    static TokenSupplier evenlyDistributedTokens(int numNodes, int numTokens)
+    {
+        long increment = (Long.MAX_VALUE / (numNodes * numTokens)) * 2;
+        List<String>[] tokens = new List[numNodes];
+        for (int i = 0; i < numNodes; i++)
+            tokens[i] = new ArrayList<>(numTokens);
+
+        long value = Long.MIN_VALUE + 1;
+        for (int i = 0; i < numTokens; i++)
+        {
+            for (int nodeId = 1; nodeId <= numNodes; nodeId++)
+            {
+                value += increment;
+                tokens[nodeId - 1].add(Long.toString(value));
+            }
+        }
+        return (int nodeId) -> tokens[nodeId - 1];
     }
 }

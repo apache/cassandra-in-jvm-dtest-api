@@ -26,13 +26,13 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -64,6 +64,16 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private int datadirCount = 3;
     private final List<Rack> racks = new ArrayList<>();
     private boolean finalised;
+    private int tokenCount = getDefaultTokenCount();
+    private boolean allowVnodes = true;
+
+    protected int getDefaultTokenCount() {
+        String key = "cassandra.dtest.num_tokens";
+        String value = System.getProperty(key);
+        if (value == null)
+            value = System.getenv(key.replace(".", "_").toUpperCase());
+        return value == null ? 1 : Integer.parseInt(value);
+    }
 
     public AbstractBuilder(Factory<I, C, B> factory)
     {
@@ -135,6 +145,14 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return datadirCount;
     }
 
+    public int getTokenCount() {
+        return tokenCount;
+    }
+
+    public boolean isAllowVnodes() {
+        return allowVnodes;
+    }
+
     public C start() throws IOException
     {
         C cluster = createWithoutStarting();
@@ -153,7 +171,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
 
         // TODO: make token allocation strategy configurable
         if (tokenSupplier == null)
-            tokenSupplier = evenlyDistributedTokens(nodeCount);
+            tokenSupplier = evenlyDistributedTokens(nodeCount, tokenCount);
 
         return factory.newCluster((B) this);
     }
@@ -179,6 +197,29 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     {
         this.tokenSupplier = tokenSupplier;
         return (B) this;
+    }
+
+    @Deprecated
+    public B withTokenSupplier(SingleTokenSupplier tokenSupplier)
+    {
+        this.tokenSupplier = tokenSupplier;
+        return (B) this;
+    }
+
+    /**
+     * This class is for source backwards compatability
+     */
+    @Deprecated
+    public interface SingleTokenSupplier extends TokenSupplier
+    {
+        @Override
+        default Collection<String> tokens(int nodeId)
+        {
+            return Collections.singletonList(Long.toString(token(nodeId)));
+        }
+
+        @Override
+        long token(int nodeId);
     }
 
     public B withSubnet(int subnet)
@@ -336,6 +377,19 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     {
         assert datadirCount > 0 : "data dir count requires a positive number but given " + datadirCount;
         this.datadirCount = datadirCount;
+        return (B) this;
+    }
+
+    public B withTokenCount(int tokenCount)
+    {
+        assert tokenCount > 0 : "Token count must be positive; given " + tokenCount;
+        this.tokenCount = tokenCount;
+        return (B) this;
+    }
+
+    public B disallowVNodes()
+    {
+        this.allowVnodes = false;
         return (B) this;
     }
 
