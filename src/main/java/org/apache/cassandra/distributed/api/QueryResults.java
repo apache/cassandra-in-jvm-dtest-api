@@ -58,7 +58,7 @@ public final class QueryResults
             @Override
             public Row next()
             {
-                row.setResults(iterator.next());
+                row.unsafeSetResults(iterator.next());
                 return row;
             }
         });

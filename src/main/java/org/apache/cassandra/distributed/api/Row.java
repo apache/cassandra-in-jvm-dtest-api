@@ -19,10 +19,8 @@
 package org.apache.cassandra.distributed.api;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -62,8 +60,24 @@ public class Row
         this.nameIndex = nameIndex;
     }
 
-    void setResults(Object[] results)
+    public static Row of(Object... results)
     {
+        String[] names = new String[results.length];
+        for (int i = 0; i < names.length; i++)
+            names[i] = "c" + i;
+        Row row = new Row(names);
+        row.setResults(results);
+        return row;
+    }
+
+    void unsafeSetResults(Object[] results)
+    {
+        this.results = results;
+    }
+
+    public void setResults(Object... results)
+    {
+        assert names.length == results.length : "Column names " + Arrays.toString(names) + " does not have the same length as results " + Arrays.toString(results);
         this.results = results;
     }
 
@@ -73,7 +87,7 @@ public class Row
     public Row copy()
     {
         Row copy = new Row(names, nameIndex);
-        copy.setResults(results);
+        copy.unsafeSetResults(results);
         return copy;
     }
 

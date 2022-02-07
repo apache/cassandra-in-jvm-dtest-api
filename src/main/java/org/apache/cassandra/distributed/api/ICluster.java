@@ -24,13 +24,14 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public interface ICluster<I extends IInstance> extends AutoCloseable
+public interface ICluster<I extends IInstance> extends AutoCloseable, Iterable<I>
 {
-    public static final String PROPERTY_PREFIX = "cassandra.test";
+    String PROPERTY_PREFIX = "cassandra.test";
 
     void startup();
 
@@ -53,6 +54,12 @@ public interface ICluster<I extends IInstance> extends AutoCloseable
     Stream<I> stream(String dcName);
 
     Stream<I> stream(String dcName, String rackName);
+
+    @Override
+    default Iterator<I> iterator()
+    {
+        return stream().iterator();
+    }
 
     IMessageFilters filters();
 

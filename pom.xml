@@ -80,6 +80,12 @@
             <version>3.5.10</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.quicktheories</groupId>
+            <artifactId>quicktheories</artifactId>
+            <version>0.26</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
