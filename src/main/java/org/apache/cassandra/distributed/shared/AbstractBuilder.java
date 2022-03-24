@@ -42,6 +42,8 @@ import static org.apache.cassandra.distributed.api.TokenSupplier.evenlyDistribut
 
 public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B extends AbstractBuilder<I, C, B>>
 {
+    private enum VNodeState
+    { SUPPORT_ALL, ONLY_SINGLE_TOKEN, ONLY_VNODE }
     public interface Factory<I extends IInstance, C extends ICluster, B extends AbstractBuilder<I, C, B>>
     {
         C newCluster(B builder);
@@ -65,7 +67,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private final List<Rack> racks = new ArrayList<>();
     private boolean finalised;
     private int tokenCount = getDefaultTokenCount();
-    private boolean allowVnodes = true;
+    private VNodeState vnodeState = VNodeState.SUPPORT_ALL;
 
     protected int getDefaultTokenCount() {
         String key = "cassandra.dtest.num_tokens";
@@ -149,8 +151,13 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return tokenCount;
     }
 
-    public boolean isAllowVnodes() {
-        return allowVnodes;
+    public boolean isVNodeAllowed() {
+        return vnodeState != VNodeState.ONLY_SINGLE_TOKEN;
+    }
+
+    public boolean isSingleTokenAllowed()
+    {
+        return vnodeState != VNodeState.ONLY_VNODE;
     }
 
     public C start() throws IOException
@@ -387,9 +394,15 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return (B) this;
     }
 
-    public B disallowVNodes()
+    public B withVNodes()
     {
-        this.allowVnodes = false;
+        vnodeState = VNodeState.ONLY_VNODE;
+        return (B) this;
+    }
+
+    public B withoutVNodes()
+    {
+        vnodeState = VNodeState.ONLY_SINGLE_TOKEN;
         return (B) this;
     }
 
