@@ -1,3 +1,7 @@
+# 0.0.13
+
+CASSANDRA-17332: Add support for vnodes in jvm-dtest
+
 # 0.0.12
 
 CASSANDRA-17214:Add IInstance.isValid() with default true return value
