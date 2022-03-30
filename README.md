@@ -5,7 +5,7 @@ Shared API package for in-JVM distributed tests.
 # Publishing snapshot
 
 ```
-mvn versions:set -DnewVersion=0.0.2-`git rev-parse --short HEAD`-SNAPSHOT
+mvn versions:set -DnewVersion=`xpath -n -q -e '/project/version/text()' pom.xml | awk -F- '{print $1}'`-`git rev-parse --short HEAD`-SNAPSHOT
 mvn deploy
 ```
 
