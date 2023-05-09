@@ -22,6 +22,8 @@ import org.apache.cassandra.distributed.api.IClassTransformer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -29,7 +31,8 @@ import java.net.URLConnection;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.Arrays;
-import java.util.function.BiFunction;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.jar.Manifest;
 
@@ -217,5 +220,61 @@ public class InstanceClassLoader extends URLClassLoader
     {
         isClosed = true;
         super.close();
+        try
+        {
+            // The JVM really wants to prevent Class instances from being GCed until the
+            // classloader which loaded them is GCed. It therefore maintains a list
+            // of Class instances for the sole purpose of providing a GC root for them.
+            // Here, we actually want the class instances to be GCed even if this classloader
+            // somehow gets stuck with a GC root, so we clear the class list via reflection.
+            // The current features implemented technically work without this, but the Garbage
+            // Collector works more efficiently with it here, and it may provide value to new
+            // feature developers.
+            Field f = getField(ClassLoader.class, "classes");
+            f.setAccessible(true);
+            List<Class<?>> classes = (List<Class<?>>) f.get(this);
+            classes.clear();
+            // Same problem with packages - without clearing this,
+            // the instance classloader can't unload
+            f = getField(ClassLoader.class, "packages");
+            f.setAccessible(true);
+            Map<?,?> packageMap = (Map<?, ?>) f.get(this);
+            packageMap.clear();
+        }
+        catch (Throwable e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException
+    {
+        // below code works before Java 12
+        try
+        {
+            return clazz.getDeclaredField(fieldName);
+        }
+        catch (NoSuchFieldException e)
+        {
+            // this is mitigation for JDK 17 (https://bugs.openjdk.org/browse/JDK-8210522)
+            try
+            {
+                Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+                getDeclaredFields0.setAccessible(true);
+                Field[] fields = (Field[]) getDeclaredFields0.invoke(clazz, false);
+                for (Field field : fields)
+                {
+                    if (fieldName.equals(field.getName()))
+                    {
+                        return field;
+                    }
+                }
+            }
+            catch (ReflectiveOperationException ex)
+            {
+                e.addSuppressed(ex);
+            }
+            throw e;
+        }
     }
 }
