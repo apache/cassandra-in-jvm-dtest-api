@@ -1,3 +1,7 @@
+# 0.0.14
+
+CASSANDRA-18511: Add support for JMX in jvm-dtest
+
 # 0.0.13
 
 CASSANDRA-17332: Add support for vnodes in jvm-dtest
