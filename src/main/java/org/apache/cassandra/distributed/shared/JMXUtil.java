@@ -19,9 +19,15 @@
 package org.apache.cassandra.distributed.shared;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.distributed.api.IInstanceConfig;
 
@@ -31,23 +37,47 @@ public final class JMXUtil
     {
     }
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(JMXUtil.class);
+
     public static final String JMX_SERVICE_URL_FMT = "service:jmx:rmi:///jndi/rmi://%s:%d/jmxrmi";
 
     public static JMXConnector getJmxConnector(IInstanceConfig config) {
+        return getJmxConnector(config, 5);
+    }
+
+    public static JMXConnector getJmxConnector(IInstanceConfig config, int numAttempts) {
         String jmxHost = getJmxHost(config);
         String url = String.format(JMX_SERVICE_URL_FMT, jmxHost, config.jmxPort());
-        try
+        int attempts = 0;
+        Throwable lastThrown = null;
+        while (attempts < numAttempts)
         {
-            return JMXConnectorFactory.connect(new JMXServiceURL(url), null);
+            attempts++;
+            try
+            {
+                JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(url), null);
+
+                LOGGER.info("Connected to JMX server at {} after {} attempt(s)",
+                            url, attempts);
+                return connector;
+            }
+
+            catch(MalformedURLException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            catch (Throwable thrown)
+            {
+                lastThrown = thrown;
+            }
+            LOGGER.info("Could not connect to JMX on {} after {} attempts. Will retry.", url, attempts);
+            Uninterruptables.sleepUninterruptibly(1, TimeUnit.SECONDS);
         }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        throw new RuntimeException("Could not start JMX - unreachable after 20 attempts", lastThrown);
     }
 
     public static String getJmxHost(IInstanceConfig config) {
         return config.broadcastAddress().getAddress().getHostAddress();
     }
-
 }

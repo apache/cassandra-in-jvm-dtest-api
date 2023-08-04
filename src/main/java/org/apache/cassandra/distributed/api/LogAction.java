@@ -30,6 +30,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.cassandra.distributed.shared.Uninterruptables;
+
 public interface LogAction
 {
     /**
@@ -56,7 +58,7 @@ public interface LogAction
             if (previousPosition == mark())
             {
                 // still matching... wait a bit
-                Internal.sleepUninterruptibly(1, TimeUnit.SECONDS);
+                Uninterruptables.sleepUninterruptibly(1, TimeUnit.SECONDS);
                 continue;
             }
             // position not matching, try to read
@@ -340,7 +342,7 @@ public interface LogAction
                     '}';
         }
     }
-    
+
     class Internal
     {
         private static final int DEFAULT_START_POSITION = -1;
@@ -387,30 +389,6 @@ public interface LogAction
         private static Predicate<String> regexPredicate(String pattern)
         {
             return regexPredicate(Pattern.compile(pattern));
-        }
-
-        private static void sleepUninterruptibly(long sleepFor, TimeUnit unit) {
-            // copied from guava since dtest can't depend on guava
-            boolean interrupted = false;
-
-            try {
-                long remainingNanos = unit.toNanos(sleepFor);
-                long end = System.nanoTime() + remainingNanos;
-
-                while(true) {
-                    try {
-                        TimeUnit.NANOSECONDS.sleep(remainingNanos);
-                        return;
-                    } catch (InterruptedException var12) {
-                        interrupted = true;
-                        remainingNanos = end - System.nanoTime();
-                    }
-                }
-            } finally {
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
-                }
-            }
         }
     }
 }
