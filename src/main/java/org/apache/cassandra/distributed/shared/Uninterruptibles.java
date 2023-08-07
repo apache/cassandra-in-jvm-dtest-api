@@ -20,7 +20,7 @@ package org.apache.cassandra.distributed.shared;
 
 import java.util.concurrent.TimeUnit;
 
-public class Uninterruptables
+public class Uninterruptibles
 {
     public static void sleepUninterruptibly(long sleepFor, TimeUnit unit) {
         // copied from guava since dtest can't depend on guava

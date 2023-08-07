@@ -30,7 +30,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.cassandra.distributed.shared.Uninterruptables;
+import org.apache.cassandra.distributed.shared.Uninterruptibles;
 
 public interface LogAction
 {
@@ -58,7 +58,7 @@ public interface LogAction
             if (previousPosition == mark())
             {
                 // still matching... wait a bit
-                Uninterruptables.sleepUninterruptibly(1, TimeUnit.SECONDS);
+                Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
                 continue;
             }
             // position not matching, try to read

@@ -18,7 +18,6 @@
 
 package org.apache.cassandra.distributed.shared;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -110,7 +109,7 @@ public final class JMXUtil
                 lastThrown = thrown;
             }
             LOGGER.info("Could not connect to JMX on {} after {} attempts. Will retry.", url, attempts);
-            Uninterruptables.sleepUninterruptibly(1, TimeUnit.SECONDS);
+            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
         }
         throw new RuntimeException("Could not start JMX - unreachable after 20 attempts", lastThrown);
     }
