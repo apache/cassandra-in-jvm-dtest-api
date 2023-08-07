@@ -41,11 +41,49 @@ public final class JMXUtil
 
     public static final String JMX_SERVICE_URL_FMT = "service:jmx:rmi:///jndi/rmi://%s:%d/jmxrmi";
 
+    /**
+     * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration.
+     * This overload uses 5 as the default number of retries which has been shown to be adequate in testing,
+     * and passes a null environment map to the connect call.
+     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @return A JMXConnector instance which can communicate with the specified instance via JMX
+     */
     public static JMXConnector getJmxConnector(IInstanceConfig config) {
-        return getJmxConnector(config, 5);
+        return getJmxConnector(config, 5, null);
     }
 
-    public static JMXConnector getJmxConnector(IInstanceConfig config, int numAttempts) {
+    /**
+     * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration.
+     * This overload uses 5 as the default number of retries which has been shown to be adequate in testing.
+     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param jmxEnv an optional map which specifies the JMX environment to use. Can be null.
+     * @return A JMXConnector instance which can communicate with the specified instance via JMX
+     */
+    public static JMXConnector getJmxConnector(IInstanceConfig config, Map<String, ?> jmxEnv) {
+        return getJmxConnector(config, 5, jmxEnv);
+    }
+
+
+    /**
+     * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration
+     * This overload passes a null environment map to the connect call.
+     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param numAttempts the number of retries to attempt before failing to connect.
+     * @return A JMXConnector instance which can communicate with the specified instance via JMX
+     */
+    public static JMXConnector getJmxConnector(IInstanceConfig config, int numAttempts)
+    {
+        return getJmxConnector(config, numAttempts, null);
+    }
+
+    /**
+     * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration
+     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param numAttempts the number of retries to attempt before failing to connect.
+     * @param jmxEnv an optional map which specifies the JMX environment to use. Can be null.
+     * @return A JMXConnector instance which can communicate with the specified instance via JMX
+     */
+    public static JMXConnector getJmxConnector(IInstanceConfig config, int numAttempts, Map<String, ?> jmxEnv) {
         String jmxHost = getJmxHost(config);
         String url = String.format(JMX_SERVICE_URL_FMT, jmxHost, config.jmxPort());
         int attempts = 0;
@@ -55,7 +93,7 @@ public final class JMXUtil
             attempts++;
             try
             {
-                JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(url), null);
+                JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(url), jmxEnv);
 
                 LOGGER.info("Connected to JMX server at {} after {} attempt(s)",
                             url, attempts);
