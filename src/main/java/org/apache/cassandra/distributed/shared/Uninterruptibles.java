@@ -34,7 +34,7 @@ public class Uninterruptibles
                 try {
                     TimeUnit.NANOSECONDS.sleep(remainingNanos);
                     return;
-                } catch (InterruptedException var12) {
+                } catch (InterruptedException iex) {
                     interrupted = true;
                     remainingNanos = end - System.nanoTime();
                 }

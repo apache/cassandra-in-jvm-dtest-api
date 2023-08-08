@@ -44,7 +44,7 @@ public final class JMXUtil
      * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration.
      * This overload uses 5 as the default number of retries which has been shown to be adequate in testing,
      * and passes a null environment map to the connect call.
-     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param config The instance configuration to use to get the necessary parameters to connect
      * @return A JMXConnector instance which can communicate with the specified instance via JMX
      */
     public static JMXConnector getJmxConnector(IInstanceConfig config) {
@@ -54,7 +54,7 @@ public final class JMXUtil
     /**
      * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration.
      * This overload uses 5 as the default number of retries which has been shown to be adequate in testing.
-     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param config The instance configuration to use to get the necessary parameters to connect
      * @param jmxEnv an optional map which specifies the JMX environment to use. Can be null.
      * @return A JMXConnector instance which can communicate with the specified instance via JMX
      */
@@ -66,7 +66,7 @@ public final class JMXUtil
     /**
      * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration
      * This overload passes a null environment map to the connect call.
-     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param config The instance configuration to use to get the necessary parameters to connect
      * @param numAttempts the number of retries to attempt before failing to connect.
      * @return A JMXConnector instance which can communicate with the specified instance via JMX
      */
@@ -77,7 +77,7 @@ public final class JMXUtil
 
     /**
      * Create an instance of a {@link JMXConnector} to an in-jvm instance based on the input configuration
-     * @param config The instance configuration to use to get the necessary paramters to connect
+     * @param config The instance configuration to use to get the necessary parameters to connect
      * @param numAttempts the number of retries to attempt before failing to connect.
      * @param jmxEnv an optional map which specifies the JMX environment to use. Can be null.
      * @return A JMXConnector instance which can communicate with the specified instance via JMX
@@ -85,11 +85,10 @@ public final class JMXUtil
     public static JMXConnector getJmxConnector(IInstanceConfig config, int numAttempts, Map<String, ?> jmxEnv) {
         String jmxHost = getJmxHost(config);
         String url = String.format(JMX_SERVICE_URL_FMT, jmxHost, config.jmxPort());
-        int attempts = 0;
+        int attempts = 1;
         Throwable lastThrown = null;
-        while (attempts < numAttempts)
+        while (attempts <= numAttempts)
         {
-            attempts++;
             try
             {
                 JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(url), jmxEnv);
@@ -101,17 +100,25 @@ public final class JMXUtil
 
             catch(MalformedURLException e)
             {
-                throw new RuntimeException(e);
+                // Because we are building the URL from the config, this should never happen.
+                // This is unrecoverable, so just rethrow wrapped in RuntimeException
+                throw new RuntimeException("Failed to connect to JXM server due to a malformed URL (Instance config must be broken?)", e);
             }
 
             catch (Throwable thrown)
             {
                 lastThrown = thrown;
             }
-            LOGGER.info("Could not connect to JMX on {} after {} attempts. Will retry.", url, attempts);
-            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+            if (attempts < numAttempts)
+            {
+                LOGGER.info("Could not connect to JMX on {} after {} attempts. Will retry.", url, attempts);
+                Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+            }
+            attempts++;
         }
-        throw new RuntimeException("Could not start JMX - unreachable after 20 attempts", lastThrown);
+        String error = "Failed to connect to JMX, which was unreachable after " + attempts + " attempts.";
+        LOGGER.error(error, lastThrown);
+        throw new RuntimeException(error, lastThrown);
     }
 
     public static String getJmxHost(IInstanceConfig config) {
