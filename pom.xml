@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.cassandra</groupId>
     <artifactId>dtest-api</artifactId>
-    <version>0.0.16</version>
+    <version>-SNAPSHOT</version>
     <name>In JVM Test API</name>
     <description>In JVM Test API</description>
 
@@ -164,7 +164,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</url>
-    <tag>0.0.16</tag>
+    <tag>0.0.15</tag>
   </scm>
 </project>
 
