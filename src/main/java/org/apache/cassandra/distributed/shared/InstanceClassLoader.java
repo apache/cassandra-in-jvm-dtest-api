@@ -52,7 +52,9 @@ public class InstanceClassLoader extends URLClassLoader
               || name.startsWith("javax.")
               || name.startsWith("jdk.")
               || name.startsWith("netscape.")
-              || name.startsWith("org.xml.sax.");
+              || name.startsWith("org.xml.sax.")
+              || name.startsWith("org.jboss.byteman.")
+              || name.startsWith("oshi.jna.");
 
     private volatile boolean isClosed = false;
     private final URL[] urls;
