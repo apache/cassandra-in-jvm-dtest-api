@@ -31,8 +31,11 @@ import java.net.URLConnection;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.Predicate;
 import java.util.jar.Manifest;
 
@@ -56,6 +59,12 @@ public class InstanceClassLoader extends URLClassLoader
               || name.startsWith("org.jboss.byteman.")
               || name.startsWith("oshi.jna.");
 
+    // Use a WeakHashMap to get the approximate count of live classloaders.
+    // Once the classloader is otherwise unused, GC will (eventually) remove it from this set as well.
+    // NOTE: Because potentially incompletely-initialized loaders are published to this set, do not expose the set
+    // itself other than through the getApproximateLiveLoaderCount method.
+    private static final Set<InstanceClassLoader> liveLoaders = Collections.synchronizedSet(
+                                                                Collections.newSetFromMap(new WeakHashMap<>()));
     private volatile boolean isClosed = false;
     private final URL[] urls;
     private final int generation; // used to help debug class loader leaks, by helping determine which classloaders should have been collected
@@ -88,11 +97,19 @@ public class InstanceClassLoader extends URLClassLoader
         this.id = id;
         this.loadShared = loadShared == null ? DEFAULT_SHARED_PACKAGES : loadShared;
         this.transform = transform;
+        liveLoaders.add(this);
     }
 
     public static Predicate<String> getDefaultLoadSharedFilter()
     {
         return DEFAULT_SHARED_PACKAGES;
+    }
+
+    public static int getApproximateLiveLoaderCount(boolean forceGC) {
+        if (forceGC) {
+            System.gc();
+        }
+        return liveLoaders.size();
     }
 
     public int getClusterGeneration()
