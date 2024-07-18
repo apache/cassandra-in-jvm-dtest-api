@@ -105,8 +105,10 @@ public class InstanceClassLoader extends URLClassLoader
         return DEFAULT_SHARED_PACKAGES;
     }
 
-    public static int getApproximateLiveLoaderCount(boolean forceGC) {
-        if (forceGC) {
+    public static int getApproximateLiveLoaderCount(boolean forceGC)
+    {
+        if (forceGC)
+        {
             System.gc();
         }
         return liveLoaders.size();
