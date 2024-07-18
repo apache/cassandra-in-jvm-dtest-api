@@ -32,25 +32,11 @@ public class InstanceClassLoaderTest
 {
 
     private static final int NUM_LOADERS = 10;
-    private List<InstanceClassLoader> loaders = new ArrayList<>();
-
-    @BeforeEach
-    public void ensureNoClassLoadersOnStart() {
-        assertThat(waitForZeroClassLoaders(50)).isTrue();
-    }
-
-    public boolean waitForZeroClassLoaders(int gcAttempts)
-    {
-        int i = 0;
-        while (InstanceClassLoader.getApproximateLiveLoaderCount(true) > 0 && i++ < gcAttempts) {
-            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
-        }
-        return InstanceClassLoader.getApproximateLiveLoaderCount(false) == 0;
-
-    }
+    private final List<InstanceClassLoader> loaders = new ArrayList<>();
 
     @Test
-    public void testRefCountZeroWhenNoneCreated() {
+    public void testRefCountZeroWhenNoneCreated()
+    {
         assertThat(InstanceClassLoader.getApproximateLiveLoaderCount(true)).isEqualTo(0);
     }
 
@@ -60,18 +46,36 @@ public class InstanceClassLoaderTest
         createClassLoadersAndAssertCount();
     }
 
-    private void createClassLoadersAndAssertCount()
-    {
-        for (int i = 0; i < NUM_LOADERS; i++) {
-            loaders.add(new InstanceClassLoader(0, 0, new URL[0], this.getClass().getClassLoader()));
-        }
-        assertThat(InstanceClassLoader.getApproximateLiveLoaderCount(true)).isEqualTo(NUM_LOADERS);
-    }
-
     @Test
-    public void testRefCountAfterInstancesCanBeGced() {
+    public void testRefCountAfterInstancesCanBeGced()
+    {
         createClassLoadersAndAssertCount();
         loaders.clear();
         assertThat(waitForZeroClassLoaders(10)).isTrue();
+    }
+
+    @BeforeEach
+    public void ensureNoClassLoadersOnStart()
+    {
+        assertThat(waitForZeroClassLoaders(50)).isTrue();
+    }
+
+    public boolean waitForZeroClassLoaders(int gcAttempts)
+    {
+        int i = 0;
+        while (InstanceClassLoader.getApproximateLiveLoaderCount(true) > 0 && i++ < gcAttempts)
+        {
+            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+        }
+        return InstanceClassLoader.getApproximateLiveLoaderCount(false) == 0;
+    }
+
+    private void createClassLoadersAndAssertCount()
+    {
+        for (int i = 0; i < NUM_LOADERS; i++)
+        {
+            loaders.add(new InstanceClassLoader(0, 0, new URL[0], this.getClass().getClassLoader()));
+        }
+        assertThat(InstanceClassLoader.getApproximateLiveLoaderCount(true)).isEqualTo(NUM_LOADERS);
     }
 }
