@@ -123,17 +123,27 @@ public final class Versions
 
     public Version getLatest(Semver version)
     {
-        return versions.get(first(version))
-											  .stream()
-												.findFirst()
-											  .orElseThrow(() -> new RuntimeException("No " + version + " versions found"));
+        return versions.getOrDefault(first(version), Collections.emptyList())
+                       .stream()
+                       .findFirst()
+                       .orElseThrow(() -> new RuntimeException("No " + version + " versions found"));
     }
 
     public static Versions find()
     {
         final String dtestJarDirectory = System.getProperty(PROPERTY_PREFIX + "test.dtest_jar_path", "build");
+        return find(dtestJarDirectory);
+    }
+
+    public static Versions find(String dtestJarDirectory)
+    {
         final File sourceDirectory = new File(dtestJarDirectory);
-        logger.info("Looking for dtest jars in " + sourceDirectory.getAbsolutePath());
+        return find(sourceDirectory);
+    }
+
+    public static Versions find(File sourceDirectory)
+    {
+        logger.info("Looking for dtest jars in {}", sourceDirectory.getAbsolutePath());
         final Pattern pattern = Pattern.compile("dtest-(?<fullversion>(\\d+)\\.(\\d+)((\\.|-alpha|-beta|-rc)([0-9]+))?(\\.\\d+)?)([~\\-]\\w[.\\w]*(?:\\-\\w[.\\w]*)*)?(\\+[.\\w]+)?\\.jar");
         final Map<Semver, List<Version>> versions = new HashMap<>();
 
@@ -146,8 +156,8 @@ public final class Versions
                     continue;
                 Semver version = new Semver(m.group(1), SemverType.LOOSE);
                 Semver series = first(version);
-                versions.putIfAbsent(series, new ArrayList<>());
-                versions.get(series).add(new Version(version, new URL[]{ toURL(file) }));
+                versions.computeIfAbsent(series, k -> new ArrayList<>())
+                        .add(new Version(version, new URL[]{ toURL(file) }));
             }
         }
 
