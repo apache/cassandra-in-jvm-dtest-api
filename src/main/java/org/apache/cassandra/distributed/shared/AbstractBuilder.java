@@ -68,6 +68,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     private boolean finalised;
     private int tokenCount = getDefaultTokenCount();
     private VNodeState vnodeState = VNodeState.SUPPORT_ALL;
+    private boolean dynamicPortAllocation = false;
 
     protected int getDefaultTokenCount() {
         String key = "cassandra.dtest.num_tokens";
@@ -160,6 +161,20 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         return vnodeState != VNodeState.ONLY_VNODE;
     }
 
+    /**
+     * @return {@code true} if dynamic port allocation for the storage, native and JMX will be use, {@code false}
+     * otherwise
+     */
+    public boolean isDynamicPortAllocation() {
+        return dynamicPortAllocation;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected B self()
+    {
+        return (B) this;
+    }
+
     public C start() throws IOException
     {
         C cluster = createWithoutStarting();
@@ -180,37 +195,37 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         if (tokenSupplier == null)
             tokenSupplier = evenlyDistributedTokens(nodeCount, tokenCount);
 
-        return factory.newCluster((B) this);
+        return factory.newCluster(self());
     }
 
     public B withSharedClassLoader(ClassLoader sharedClassLoader)
     {
         this.sharedClassLoader = Objects.requireNonNull(sharedClassLoader, "sharedClassLoader");
-        return (B) this;
+        return self();
     }
 
     public B withSharedClasses(Predicate<String> sharedClasses)
     {
         this.sharedClasses = Objects.requireNonNull(sharedClasses, "sharedClasses");
-        return (B) this;
+        return self();
     }
 
     public B withBroadcastPort(int broadcastPort) {
         this.broadcastPort = broadcastPort;
-        return (B) this;
+        return self();
     }
 
     public B withTokenSupplier(TokenSupplier tokenSupplier)
     {
         this.tokenSupplier = tokenSupplier;
-        return (B) this;
+        return self();
     }
 
     @Deprecated
     public B withTokenSupplier(SingleTokenSupplier tokenSupplier)
     {
         this.tokenSupplier = tokenSupplier;
-        return (B) this;
+        return self();
     }
 
     /**
@@ -232,7 +247,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public B withSubnet(int subnet)
     {
         this.subnet = subnet;
-        return (B) this;
+        return self();
     }
 
     /**
@@ -246,7 +261,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public B withNodes(int nodeCount)
     {
         this.nodeCount = nodeCount;
-        return (B) this;
+        return self();
     }
 
     /**
@@ -270,7 +285,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         for (int dc = 1; dc <= dcCount; dc++)
             for (int rack = 1; rack <= racksPerDC; rack++)
                 withRack(dcName(dc), rackName(rack), -1);
-        return (B) this;
+        return self();
     }
 
     /**
@@ -284,7 +299,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         for (int dc = 1; dc <= dcCount; dc++)
             for (int rack = 1; rack <= racksPerDC; rack++)
                 withRack(dcName(dc), rackName(rack), nodesPerRack);
-        return (B) this;
+        return self();
     }
 
     /**
@@ -301,7 +316,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
     public B withRack(String dcName, String rackName, int nodesInRack)
     {
         racks.add(new Rack(dcName, rackName, nodesInRack));
-        return (B) this;
+        return self();
     }
 
     // Map of node ids to dc and rack - must be contiguous with an entry nodeId 1 to nodeCount
@@ -317,31 +332,31 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
 
         this.nodeIdTopology = new HashMap<>(nodeIdTopology);
 
-        return (B) this;
+        return self();
     }
 
     public B withRoot(File root)
     {
         this.rootFile = root;
-        return (B) this;
+        return self();
     }
 
     public B withRoot(Path root)
     {
         this.rootPath = root;
-        return (B) this;
+        return self();
     }
 
     public B withVersion(Versions.Version version)
     {
         this.version = version;
-        return (B) this;
+        return self();
     }
 
     public B withConfig(Consumer<IInstanceConfig> updater)
     {
         this.configUpdater = updater;
-        return (B) this;
+        return self();
     }
 
     public B appendConfig(Consumer<IInstanceConfig> updater)
@@ -349,7 +364,7 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
         Consumer<IInstanceConfig> prev = configUpdater;
         Consumer<IInstanceConfig> next = prev == null ? updater : config -> { prev.accept(config); updater.accept(config); };
         this.configUpdater = next;
-        return (B) this;
+        return self();
     }
 
     public B withInstanceInitializer(BiConsumer<ClassLoader, Integer> instanceInitializer)
@@ -365,45 +380,61 @@ public abstract class AbstractBuilder<I extends IInstance, C extends ICluster, B
                 instanceInitializer.accept(classLoader, num);
             }
         };
-        return (B) this;
+        return self();
     }
 
     public B withInstanceInitializer(IInstanceInitializer instanceInitializer)
     {
         this.instanceInitializer = instanceInitializer;
-        return (B) this;
+        return self();
     }
 
     public B withClassTransformer(IClassTransformer classTransformer)
     {
         this.classTransformer = classTransformer;
-        return (B) this;
+        return self();
     }
 
     public B withDataDirCount(int datadirCount)
     {
         assert datadirCount > 0 : "data dir count requires a positive number but given " + datadirCount;
         this.datadirCount = datadirCount;
-        return (B) this;
+        return self();
     }
 
     public B withTokenCount(int tokenCount)
     {
         assert tokenCount > 0 : "Token count must be positive; given " + tokenCount;
         this.tokenCount = tokenCount;
-        return (B) this;
+        return self();
     }
 
     public B withVNodes()
     {
         vnodeState = VNodeState.ONLY_VNODE;
-        return (B) this;
+        return self();
     }
 
     public B withoutVNodes()
     {
         vnodeState = VNodeState.ONLY_SINGLE_TOKEN;
-        return (B) this;
+        return self();
+    }
+
+    /**
+     * When {@code dynamicPortAllocation} is {@code true}, it will request to dynamically provision
+     * available storage, native and JMX ports in the given interface. When {@code dynamicPortAllocation} is
+     * {@code false} (the default behavior), it will use statically allocated ports based on the number of
+     * interfaces available and the node number.
+     *
+     * @param dynamicPortAllocation {@code true} for dynamic port allocation, {@code false} for static port
+     *                              allocation
+     * @return a reference to this Builder
+     */
+    public B withDynamicPortAllocation(boolean dynamicPortAllocation)
+    {
+        this.dynamicPortAllocation = dynamicPortAllocation;
+        return self();
     }
 
     private void finaliseBuilder()

@@ -47,6 +47,8 @@ public interface ICluster<I extends IInstance> extends AutoCloseable, Iterable<I
 
     void schemaChange(String statement, int instance);
 
+    void schemaChangeIgnoringStoppedInstances(String query);
+
     int size();
 
     Stream<I> stream();
@@ -54,6 +56,15 @@ public interface ICluster<I extends IInstance> extends AutoCloseable, Iterable<I
     Stream<I> stream(String dcName);
 
     Stream<I> stream(String dcName, String rackName);
+
+    IInstanceConfig newInstanceConfig();
+
+    IInstanceConfig createInstanceConfig(int nodeNum);
+
+    /**
+     * @return the first instance with running state
+     */
+    I getFirstRunningInstance();
 
     @Override
     default Iterator<I> iterator()

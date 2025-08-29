@@ -164,7 +164,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf/cassandra-in-jvm-dtest-api.git</url>
-    <tag>0.0.16</tag>
+    <tag>0.0.18</tag>
   </scm>
 </project>
 

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public class VersionsTest
 {
@@ -42,15 +43,17 @@ public class VersionsTest
             "4.0.0",
             "4.1.0"
     };
+    private static String dtestJarPath;
 
     @BeforeAll
     public static void beforeAll() throws IOException
     {
         Path root = Files.createTempDirectory("versions");
-        System.setProperty(Versions.PROPERTY_PREFIX + "test.dtest_jar_path", root.toAbsolutePath().toString());
+        dtestJarPath = root.toAbsolutePath().toString();
+        System.setProperty(Versions.PROPERTY_PREFIX + "test.dtest_jar_path", dtestJarPath);
 
         for (String version : VERSIONS)
-            Files.createFile(Paths.get(root.toAbsolutePath().toString(), "dtest-" + version + ".jar"));
+            Files.createFile(Paths.get(dtestJarPath, "dtest-" + version + ".jar"));
     }
 
     @AfterAll
@@ -78,6 +81,16 @@ public class VersionsTest
     {
         Versions.find().getLatest(new Semver("2.2.0"));
         Versions.find().getLatest(new Semver("2.2", Semver.SemverType.LOOSE));
+    }
+
+    @Test
+    public void testGetLatestShouldNotThrowNPEWhenNoJarsAreFound()
+    {
+        System.setProperty(Versions.PROPERTY_PREFIX + "test.dtest_jar_path", "non-existent-path");
+        assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> Versions.find()
+                                                                                   .getLatest(new Semver("4.0.0")))
+                                                         .withMessage("No 4.0.0 versions found");
+        System.setProperty(Versions.PROPERTY_PREFIX + "test.dtest_jar_path", dtestJarPath);
     }
 
     @Test
