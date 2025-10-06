@@ -1,3 +1,19 @@
+# 0.0.18
+
+CASSANDRA-20884 - Move JMX classes to the in-jvm-dtest API project
+
+# 0.0.17
+
+CASSANDRA-19783 InstanceClassLoader leak detection
+
+# 0.0.16
+
+CASSANDRA-18727 - JMXUtil.getJmxConnector should retry connection attempts
+
+# 0.0.15
+
+CASSANDRA-18537 - Add JMX utility class to in-jvm dtest to ease development of new tests using JMX
+
 # 0.0.14
 
 CASSANDRA-18511: Add support for JMX in jvm-dtest
