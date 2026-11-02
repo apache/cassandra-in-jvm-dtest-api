@@ -1,3 +1,7 @@
+# 0.0.19
+
+CASSANDRA-21801 - Read a jar entry before asking for its code signers
+
 # 0.0.18
 
 CASSANDRA-20884 - Move JMX classes to the in-jvm-dtest API project
