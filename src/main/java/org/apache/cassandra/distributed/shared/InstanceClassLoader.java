@@ -178,13 +178,9 @@ public class InstanceClassLoader extends URLClassLoader
         try
         {
             URLConnection connection = url.openConnection();
-            CodeSigner[] codeSigners = null;
             Manifest manifest = null;
             if (connection instanceof JarURLConnection)
-            {
                 manifest = ((JarURLConnection) connection).getManifest();
-                codeSigners = ((JarURLConnection) connection).getJarEntry().getCodeSigners();
-            }
             if (null == getPackage(pkg))
             {
                 try
@@ -217,6 +213,11 @@ public class InstanceClassLoader extends URLClassLoader
                 }
                 if (total < bytes.length)
                     bytes = Arrays.copyOf(bytes, total);
+
+                // getCodeSigners() returns null until the entry is fully read
+                CodeSigner[] codeSigners = null;
+                if (connection instanceof JarURLConnection)
+                    codeSigners = ((JarURLConnection) connection).getJarEntry().getCodeSigners();
 
                 bytes = transform.transform(name, bytes);
                 return defineClass(name, bytes, 0, bytes.length, new CodeSource(url, codeSigners));
